@@ -53,7 +53,8 @@ public:
     int kit { 0 };                           // the sample kit (Sampler.h) that plays the preview
     std::atomic<bool> dragAllLayers { false };  // ARRASTAR: melody only, or melody + chords + bass
     // Renders one loop of the pattern with the current kit and vibe to a 24-bit WAV (seamless: the tail wraps to the start).
-    bool renderWav(const juce::File&, bool allLayers);
+    // onlyLayer >= 0 renders just that layer (0 melody, 1 bass, 2 chords): stems for tests and demos
+    bool renderWav(const juce::File&, bool allLayers, int onlyLayer = -1);
     // BASS and MELODY are the preview mix levels of the two layers (low line, main line). They never change notes:
     // the composition is controlled by Role / Feel / Density / Range, so these stay a balance control.
     float bassLevel { 0.7f }, melodyLevel { 0.8f };
@@ -65,6 +66,9 @@ private:
     mc::Settings current;
     mc::Pattern shown;                      // message thread copy
     mc::Pattern audioPattern;               // audio thread copy
+    std::vector<mc::Note> audioHeldChords;  // its chords held, for sets with sustained chord sounds
+    std::vector<mc::Note> audioRootChords;  // only its chord roots, for sets with stabs tuned to a chord
+    std::array<int, 3> audioCenters {};     // median pitch of melody, bass, chords
     juce::SpinLock patternLock;
     std::atomic<bool> resetPosition { false };
     std::vector<mc::Pattern> history;

@@ -162,14 +162,55 @@ int main() {
     juce::ScopedJuceInitialiser_GUI init;
     MelodyCodeProcessor p;
     p.prepareToPlay(48000.0, 512);
-    // MC_DEMO_DIR=<folder>: write one full-mix WAV per kit (listening demos) and stop
+    // MC_DUMP_DIR=<folder>: demo scenarios -> "antes" WAV + notes JSON (local listening tests only)
+    if (const char* dir = std::getenv("MC_DUMP_DIR")) {
+        struct Sc { const char* id; mc::Style st; int kit; int bpm; mc::Vibe vibe; };
+        const Sc scs[] {
+            { "trap", mc::Style::trap, 0, 140, mc::Vibe::dark },
+            { "rnb", mc::Style::rnb, 3, 88, mc::Vibe::dreamy },
+            { "funk", mc::Style::funkBR, 1, 130, mc::Vibe::clean },
+            { "pop", mc::Style::pop, 6, 110, mc::Vibe::clean },
+            { "orquestral", mc::Style::orchestral, 2, 90, mc::Vibe::space },
+            { "lofi", mc::Style::lofi, 5, 80, mc::Vibe::tape },
+            { "drill", mc::Style::drill, 4, 142, mc::Vibe::dark },
+            { "reggaeton", mc::Style::reggaeton, 1, 95, mc::Vibe::clean },
+        };
+        for (const auto& c : scs) {
+            p.kit = c.kit; p.settings().style = c.st; p.settings().bars = 8; p.bpm = c.bpm;
+            p.setVibe(c.vibe); p.generateAll();
+            const auto d = juce::File(dir);
+            p.renderWav(d.getChildFile(juce::String(c.id) + "-antes.wav"), true);
+            const auto pt = p.pattern();
+            juce::String js; js << "{\"bpm\":" << c.bpm << ",\"bars\":" << pt.bars() << ",\"key\":" << pt.key << ",\"kit\":" << c.kit << ",\"vibe\":" << (int) c.vibe << ",\"ppq\":" << mc::ppq;
+            auto arr = [&](const char* name, const std::vector<mc::Note>& v) {
+                js << ",\"" << name << "\":[";
+                for (size_t i = 0; i < v.size(); ++i) js << (i ? "," : "") << "[" << v[i].start << "," << v[i].length << "," << v[i].pitch << "," << v[i].velocity << "]";
+                js << "]";
+            };
+            arr("melody", pt.melody); arr("bass", pt.bass); arr("chords", pt.chords);
+            js << "}";
+            d.getChildFile(juce::String(c.id) + ".json").replaceWithText(js);
+        }
+        return 0;
+    }
+    // MC_DEMO_DIR=<folder>: one full-mix WAV per sound set, in a style that suits it, plus its three stems
     if (const char* dir = std::getenv("MC_DEMO_DIR")) {
-        const mc::Style styles[] { mc::Style::rnb, mc::Style::pop, mc::Style::trap, mc::Style::afrobeats, mc::Style::reggaeton, mc::Style::funkBR, mc::Style::house, mc::Style::lofi, mc::Style::drill };
-        const int tempos[] { 90, 110, 140, 104, 95, 130, 124, 85, 142 };
+        const mc::Style styles[] { mc::Style::rnb, mc::Style::lofi, mc::Style::reggaeton, mc::Style::lofi, mc::Style::rnb, mc::Style::reggaeton, mc::Style::lofi,
+                                   mc::Style::orchestral, mc::Style::orchestral, mc::Style::orchestral, mc::Style::funkBR, mc::Style::funkBR, mc::Style::funkBR };
+        const int tempos[] { 88, 80, 95, 80, 88, 95, 80, 76, 76, 92, 130, 130, 130 };
+        static_assert(std::size(styles) == Sampler::kitCount && std::size(tempos) == Sampler::kitCount);
+        const char* stems[] { "melodia", "grave", "acordes" };
         for (int k = 0; k < Sampler::kitCount; ++k) {
             p.kit = k; p.settings().style = styles[k]; p.settings().bars = 8; p.bpm = tempos[k];
             p.setVibe(mc::Vibe::clean); p.generateAll();
-            p.renderWav(juce::File(dir).getChildFile(juce::String(k + 1) + " " + Sampler::kit(k).name + " - " + mc::styleName(styles[k]) + ".wav"), true);
+            if (std::getenv("MC_DEMO_VERBOSE")) {
+                const auto pt = p.pattern();
+                auto med = [](std::vector<mc::Note> v) { std::sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.pitch < b.pitch; }); return v.empty() ? 0 : v[v.size() / 2].pitch; };
+                std::printf("%s: melody %d bass %d chords %d\n", Sampler::kit(k).name, med(pt.melody), med(pt.bass), med(pt.chords));
+            }
+            const auto base = juce::String(k + 1).paddedLeft('0', 2) + " " + Sampler::kit(k).name;
+            p.renderWav(juce::File(dir).getChildFile(base + ".wav"), true);
+            for (int l = 0; l < 3; ++l) p.renderWav(juce::File(dir).getChildFile(base + " - " + stems[l] + ".wav"), true, l);
         }
         return 0;
     }
