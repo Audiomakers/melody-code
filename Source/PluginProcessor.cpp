@@ -62,6 +62,21 @@ std::vector<mc::Note> heldChords(const mc::Pattern& p) {
     }
     return out;
 }
+// ...and, for stab one-shots tuned to a chord, one note per hit: the chord's root, in the octave nearest the
+// chords' median so the line keeps the chords' center (the sampler then moves it by octaves like any line)
+std::vector<mc::Note> rootChords(const mc::Pattern& p) {
+    const int mid = layerCenters(p)[2];
+    std::map<int, mc::Note> byStart;
+    for (const auto& n : p.chords)
+        if (! byStart.count(n.start)) byStart[n.start] = n;
+    std::vector<mc::Note> out;
+    for (auto [start, n] : byStart) {
+        const int root = ((p.chordAt(start).root % 12) + 12) % 12;
+        n.pitch = root + 12 * (int) std::lround((mid - root) / 12.0);
+        out.push_back(n);
+    }
+    return out;
+}
 const char* keyNames[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 }
 
@@ -86,10 +101,12 @@ void MelodyCodeProcessor::publish(mc::Pattern p, bool addHistory) {
     shown = p;
     {
         auto held = heldChords(p);
+        auto roots = rootChords(p);
         const auto centers = layerCenters(p);
         const juce::SpinLock::ScopedLockType sl(patternLock);
         audioPattern = std::move(p);
         audioHeldChords = std::move(held);
+        audioRootChords = std::move(roots);
         audioCenters = centers;
     }
     edited = false;
@@ -198,7 +215,8 @@ void MelodyCodeProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
                     }
             };
             collect(audioPattern.bass, 1);
-            collect(Sampler::kit(kit).sustainChords ? audioHeldChords : audioPattern.chords, 2);
+            const auto& k = Sampler::kit(kit);
+            collect(k.sustainChords ? audioHeldChords : k.rootChords ? audioRootChords : audioPattern.chords, 2);
             collect(audioPattern.melody, 0);
             position = to;
             if (position >= len) position -= len;
@@ -251,7 +269,8 @@ bool MelodyCodeProcessor::renderWav(const juce::File& file, bool allLayers, int 
     s.setTempo(tempo);
     const auto centers = layerCenters(p);
     s.setCenters(centers[0], centers[1], centers[2]);
-    const auto held = heldChords(p);
+    const auto held = heldChords(p), roots = rootChords(p);
+    const auto& k = Sampler::kit(kit);
     struct Ev { int at; mc::Note note; int layer; };
     std::vector<Ev> evs;
     for (int pass = 0; pass < 2; ++pass) {   // play the loop twice and keep the second: its start carries the first pass's tail
@@ -260,7 +279,7 @@ bool MelodyCodeProcessor::renderWav(const juce::File& file, bool allLayers, int 
             for (const auto& n : notes) evs.push_back({ pass * loopLen + (int) (n.start * samplesPerTick), n, layer });
         };
         add(p.melody, 0);
-        if (allLayers || onlyLayer >= 0) { add(p.bass, 1); add(Sampler::kit(kit).sustainChords ? held : p.chords, 2); }
+        if (allLayers || onlyLayer >= 0) { add(p.bass, 1); add(k.sustainChords ? held : k.rootChords ? roots : p.chords, 2); }
     }
     std::sort(evs.begin(), evs.end(), [](const Ev& a, const Ev& b) { return a.at < b.at; });
     juce::AudioBuffer<float> buf(2, loopLen * 2);

@@ -75,9 +75,9 @@ const Sampler::Kit kits[Sampler::kitCount] {
     { "\xc3\x89PICO", "Trompa na melodia, naipe de cordas nos acordes, tuba no grave",                  "horn",       "strings",    "tuba", true },
     { "F\xc3\x81" "BULA", "Clarinete na melodia, trompas nos acordes, contrabaixo pizzicato",            "clarinet",   "horn",       "contrabass", true },
     { "ENCANTO",  "Harpa na melodia, violinos pizzicato nos acordes, contrabaixo pizzicato",          "harp",       "pizzicato",  "contrabass" },
-    { "PHONK",    "Cowbell na melodia, stabs de serra nos acordes, 808 pesada",                       "cowbell",    "saw_stab",   "bass808_pesada" },
-    { "BAILE",    "Violinos spiccato na melodia, trompas curtas nos acordes, 808 grave",              "spiccato",   "horn_stac",  "bass808_grave" },
-    { "FLUXO",    "Bleep digital na melodia, stabs de synth nos acordes, 808 baixote",                "bleep",      "stabs",      "bass808_baixote" },
+    { "PHONK",    "Cowbell na melodia, Rio Synth na fundamental dos acordes, Rio Bass",               "cowbell",    "rio_synth",  "bass_rio", false, true },
+    { "BAILE",    "Violinos spiccato na melodia, trompas curtas nos acordes, grave de funk",          "spiccato",   "horn_stac",  "bass_grave2" },
+    { "FLUXO",    "Bleep digital na melodia, stabs de synth nos acordes, baixo de funk",              "bleep",      "stabs",      "bass_anthem" },
 };
 
 // per set and layer (melody, bass, chords), in dB: measured with MC_DEMO_DIR so every set mixes like the demos
@@ -86,16 +86,16 @@ const float kitGainsDb[Sampler::kitCount][3] {
     { 10.2f, 12.4f,  5.3f },   // CRISTAL
     { 11.1f, 12.9f, 13.2f },   // BRISA
     {  9.5f, 13.2f, 11.7f },   // SEDA
-    {  9.8f, 13.1f,  6.5f },   // NINAR
+    { 10.8f, 13.1f,  7.2f },   // NINAR
     {  9.6f, 14.4f, 10.1f },   // NUVEM
-    { 10.4f, 13.4f,  7.9f },   // PIXEL
+    { 11.1f, 13.4f,  5.2f },   // PIXEL
     { 11.3f, 12.9f,  5.2f },   // VELUDO
     {  6.6f,  8.9f,  6.5f },   // EPICO
     {  4.2f, 13.0f,  6.5f },   // FABULA
     {  9.6f, 14.0f,  7.2f },   // ENCANTO
-    { 11.0f, 13.2f,  6.2f },   // PHONK
-    { 10.1f, 13.1f,  7.0f },   // BAILE
-    {  9.5f, 12.7f,  6.0f },   // FLUXO
+    { 11.9f, 11.9f, 10.7f },   // PHONK
+    {  9.5f, 12.2f,  7.0f },   // BAILE
+    { 10.9f, 11.4f,  6.1f },   // FLUXO
 };
 
 struct KitInsts { int melody, chords, bass; };

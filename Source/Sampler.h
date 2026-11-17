@@ -11,7 +11,7 @@ public:
         const char* name; const char* description;
         const char* melody; const char* chords; const char* bass;   // instrument names (InstrumentTable.inc)
         bool sustainChords { false };   // bowed / airy chord sounds: one held chord per change instead of the style's rhythm
-        bool dark { false };
+        bool rootChords { false };      // stab one-shots tuned to a chord: play only each chord's root, in the style's rhythm
         int synth { -1 };               // >= 0: a synthesized kit played by Synth with that Tone preset (none at the moment)
     };
     static constexpr int kitCount = 13;

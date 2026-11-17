@@ -3,14 +3,16 @@
 Source/SampleTable.inc (one row per zone) and Source/InstrumentTable.inc (one row per instrument).
 
 usage: build_sets.py <samples root> <vsco root> <repo root>
-  samples root: the folder that holds the Audio Makers packs (AMKR Quebrada, AudioMakers Trap Essentials,
-                Submundo 808 Sample Pack), i.e. D:\\Samples\\AudioMakers
+  samples root: the folder that holds the Audio Makers packs (AudioMakers Trap Essentials, Submundo 808
+                Sample Pack), i.e. D:\\Samples\\AudioMakers; the funk kits (Atlantida, Anthem) sit next to
+                it in D:\\Samples\\funk
   vsco root:    a checkout of VSCO 2 Community Edition (CC0), github.com/sgossner/VSCO-2-CE
 
 Three kinds of instrument:
-  oneshot  one recorded note of Ed's own packs, played as an instrument (root measured, the file names lie)
+  oneshot  one recorded note (Ed's packs, KING DOUDOU, the Atlantida and Anthem funk kits), played as an
+           instrument (root measured or checked by hand: the file names lie)
   vsco     a multi-sampled orchestral instrument (names are one octave low: measured, then snapped)
-  synth    a timbre synthesized here (FM keys, plucks, sub, cowbell...) and stored as samples every few
+  synth    a timbre synthesized here (FM keys, plucks, sub) and stored as samples every few
            semitones, so the plugin plays it exactly like the demos Ed approved
 Every zone is mono 44.1 kHz Ogg Vorbis, its body at -16 dBFS RMS; sustained sounds get a crossfade loop.
 """
@@ -64,37 +66,13 @@ def sub(m, secs, p, vel=100):
     d = p.get('drive', 1.3)
     return np.tanh(x * d) / np.tanh(d) * env(n, 0.004, p.get('decay', 3.0), p.get('sustain', 0.8))
 
-def cowbell(m, secs, p, vel=100):
-    """808-style cowbell: two square waves a fifth-ish apart through a band-pass, short metallic decay"""
-    n = int(secs * SR); t = np.arange(n) / SR; f = hz(m)
-    x = np.sign(np.sin(2 * np.pi * f * t)) + 0.8 * np.sign(np.sin(2 * np.pi * f * 1.48 * t + 0.3))
-    x = svf_lp(x, np.full(n, f * 4.0), 0.55) - svf_lp(x, np.full(n, f * 0.8), 0.2)
-    return x * (0.7 * np.exp(-t / 0.05) + 0.3 * np.exp(-t / 0.35)) * np.minimum(1, t / 0.001)
-
-def music_box(m, secs, p, vel=100):
-    """steel comb: bright harmonic FM with a quick metallic ping and a long soft ring"""
-    n = int(secs * SR); t = np.arange(n) / SR; f = hz(m)
-    idx = 1.4 * np.exp(-t / 0.08) + 0.15
-    x = np.sin(2 * np.pi * f * t + idx * np.sin(2 * np.pi * f * 3.0 * t))
-    x += 0.35 * np.sin(2 * np.pi * f * 4.07 * t) * np.exp(-t / 0.12) + 0.15 * np.sin(2 * np.pi * f * 2 * t) * np.exp(-t / 0.5)
-    return x * np.exp(-t / 0.9) * np.minimum(1, t / 0.0015)
-
-def bleep(m, secs, p, vel=100):
-    """digital bleep: sine with a little square edge and a fast pitch blip at the start"""
-    n = int(secs * SR); t = np.arange(n) / SR
-    f = hz(m) * (1 + 0.04 * np.exp(-t / 0.006))
-    ph = 2 * np.pi * np.cumsum(f) / SR
-    x = np.sin(ph) + 0.18 * np.tanh(4 * np.sin(ph)) + 0.12 * np.sin(2 * ph) * np.exp(-t / 0.05)
-    return x * (0.25 + 0.75 * np.exp(-t / 0.18)) * np.exp(-t / 0.6) * np.minimum(1, t / 0.0015)
-
-SYNTHS = {'pluck': pluck, 'fm': fm, 'sub': sub, 'cowbell': cowbell, 'music_box': music_box, 'bleep': bleep}
+SYNTHS = {'pluck': pluck, 'fm': fm, 'sub': sub}
 
 EP = dict(ratio=1.0, index=1.6, idecay=0.6, index_sus=0.15, decay=1.8, sustain=0.25, tine=0.25)
 KEYS = dict(ratio=1.0, index=1.2, idecay=0.5, index_sus=0.1, decay=1.0, sustain=0.2, tine=0.15)
 MARIMBA = dict(ratio=4.0, index=1.4, idecay=0.05, index_sus=0.0, decay=0.45)
 SOFT_PLUCK = dict(cut=700, env=2200, fdecay=0.15, decay=0.9, sustain=0.2, detune=6)
 STABS = dict(cut=900, env=2500, fdecay=0.08, decay=0.22, sustain=0.05, detune=10)
-SAW_STAB = dict(cut=1100, env=3200, fdecay=0.07, decay=0.18, sustain=0.08, detune=14, res=0.35)
 SUB_ROUND = dict(h2=0.25, h3=0.08, drive=1.6, decay=1.2, sustain=0.6)
 SUB_WARM = dict(h2=0.35, h3=0.12, drive=1.4, decay=0.9, sustain=0.5)
 
@@ -103,8 +81,11 @@ SUB_WARM = dict(h2=0.35, h3=0.12, drive=1.4, decay=0.9, sustain=0.5)
 # octaves toward it), lowest/highest (single notes fold inside), attack and release seconds, level.
 MEL = 'Submundo 808 Sample Pack/Melodic_One_Shots/'
 AMK = 'AudioMakers Trap Essentials/One_Shots/Melodic/'
-QB = 'AMKR Quebrada/808/'
 T808 = 'AudioMakers Trap Essentials/One_Shots/808/'
+# third-party kits, next to the Audio Makers folder
+ATL = '../funk/NEW BRAZILIAN FUNK PHONK DRUMKIT FROM ATLANTIDA/'
+RIO = ATL + 'LIFE IN RIO STASH/'
+ANTHEM = '../funk/[Anthem] Funk Drum Kit Vol. 1/'
 I = {}
 def inst(name, center, lo, hi, attack, release, level, **src):
     I[name] = dict(center=center, lo=lo, hi=hi, attack=attack, release=release, level=level, **src)
@@ -113,14 +94,14 @@ def inst(name, center, lo, hi, attack, release, level, **src):
 inst('bell_glass', 74, 60, 88, 0.002, 0.20, 1.00, oneshot=MEL + 'BELL NS 10.wav', keep=5.0)
 inst('flute',      72, 60, 86, 0.004, 0.09, 0.95, oneshot=MEL + 'FLAUTA NS 8.wav', keep=1.5)
 inst('marimba',    76, 60, 92, 0.001, 0.05, 1.00, synth=('fm', MARIMBA), roots=range(56, 97, 4), secs=1.2)
-inst('music_box',  76, 64, 92, 0.001, 0.30, 1.00, synth=('music_box', {}), roots=range(60, 97, 4), secs=3.0)
+inst('music_box',  76, 64, 92, 0.001, 0.30, 1.00, oneshot=MEL + 'KING_DOUDOU_one_shot_music_box_C.wav', root=59.93, keep=1.0)
 inst('bell_soft',  74, 60, 88, 0.002, 0.15, 1.00, oneshot=MEL + 'BELL NS 7.wav', keep=2.2)
-inst('bleep',      74, 60, 90, 0.001, 0.08, 0.90, synth=('bleep', {}), roots=range(56, 93, 4), secs=1.5)
+inst('bleep',      74, 60, 90, 0.001, 0.08, 0.90, oneshot=MEL + 'KING_DOUDOU_one_shot_synth_digi_bleep_C.wav', root=71.97, keep=1.5)
 inst('velvet',     72, 58, 86, 0.003, 0.15, 1.00, oneshot=MEL + '@kotimoficial - One Shot 36.wav', keep=5.0)
 inst('horn',       67, 45, 77, 0.030, 0.12, 0.95, vsco='Brass/F Horn/sus', pick='_v2', loop=(1.0, 5.0))
 inst('clarinet',   70, 52, 89, 0.020, 0.10, 0.95, vsco='Woodwinds/Clarinet/susLong', pick='_v2', loop=(1.0, 4.0))
 inst('harp',       72, 40, 96, 0.001, 0.20, 1.00, vsco='Strings/Harp', keep=4.0)
-inst('cowbell',    68, 56, 84, 0.001, 0.05, 0.85, synth=('cowbell', {}), roots=range(52, 89, 4), secs=1.0)
+inst('cowbell',    68, 56, 84, 0.001, 0.05, 0.85, oneshot=RIO + '$B-COWBELLS (16).wav', root=66.77, keep=1.2)
 inst('spiccato',   72, 55, 86, 0.002, 0.04, 1.00, vsco='Strings/Violin Section/Spic', pick='_v2_rr1', keep=1.2)
 # chords
 inst('ep',         60, 46, 76, 0.002, 0.08, 1.00, synth=('fm', EP), roots=range(44, 81, 3), secs=4.0, loop=(1.6, 3.8))
@@ -134,14 +115,14 @@ inst('strings',    58, 36, 86, 0.080, 0.15, 0.85, vsco_ens=[('Strings/Cello Sect
                                                             ('Strings/Violin Section/susVib', '_v2', 64, 128)], loop=(1.2, 6.0))
 inst('pizzicato',  66, 55, 86, 0.001, 0.08, 1.00, vsco='Strings/Violin Section/Pizz', pick='_v2_rr1', keep=1.5)
 inst('horn_stac',  60, 45, 77, 0.002, 0.04, 1.00, vsco='Brass/F Horn/stac', pick='_v2_rr1', keep=1.0)
-inst('saw_stab',   62, 46, 78, 0.001, 0.03, 0.95, synth=('pluck', SAW_STAB), roots=range(44, 81, 4), secs=1.0)
+inst('rio_synth',  50, 40, 62, 0.001, 0.03, 1.00, oneshot=RIO + 'Rio Synth [C].wav', root=48.26, keep=0.5)   # played on chord roots only
 # bass
 inst('sub_round',  36, 26, 48, 0.004, 0.02, 1.00, synth=('sub', SUB_ROUND), roots=range(24, 53, 4), secs=3.0, loop=(1.5, 2.9))
 inst('sub_warm',   38, 26, 50, 0.004, 0.02, 1.00, synth=('sub', SUB_WARM), roots=range(24, 53, 4), secs=3.0, loop=(1.5, 2.9))
 inst('bass808',        33, 24, 45, 0.001, 0.03, 1.00, oneshot=T808 + 'AMKR_808_deal_C.wav', keep=3.5)
-inst('bass808_pesada', 33, 24, 45, 0.001, 0.03, 1.00, oneshot=QB + 'AMKR_808_Pesada.wav', keep=3.5)
-inst('bass808_grave',  33, 24, 45, 0.001, 0.03, 1.00, oneshot=QB + 'AMKR_808_Grave.wav', keep=3.5)
-inst('bass808_baixote', 33, 24, 45, 0.001, 0.03, 1.00, oneshot=QB + 'AMKR_808_Baixote.wav', keep=3.5)
+inst('bass_rio',    33, 24, 45, 0.001, 0.03, 1.00, oneshot=RIO + 'Rio Bass.wav', root=30.98, keep=1.9)
+inst('bass_grave2', 34, 24, 46, 0.001, 0.03, 1.00, oneshot=ATL + 'BASS/Grave 2.wav', root=34.3, keep=3.5)
+inst('bass_anthem', 31, 22, 43, 0.001, 0.03, 1.00, oneshot=ANTHEM + 'Baixos/Anthem [Baixo] (3).wav', root=24.01, keep=1.0)
 inst('tuba',       38, 28, 55, 0.020, 0.10, 1.00, vsco='Brass/Tuba/sus', pick='_v2', loop=(1.0, 3.0))
 inst('contrabass', 40, 28, 55, 0.001, 0.10, 1.00, vsco='Strings/Solo Contrabass/Pizz', pick='_v3_rr1', keep=2.0)
 
@@ -220,7 +201,8 @@ def main(samples, vsco, repo):
         loop = d.get('loop'); keep = d.get('keep', 6.0)
         if 'oneshot' in d:
             x = decode(os.path.join(samples, d['oneshot']))
-            src = [(measure_root(x[np.argmax(np.abs(x) > 0.01 * np.abs(x).max()):]), x)]
+            # hand-checked roots where pyin is unreliable (bells, gliding 808s)
+            src = [(d['root'] if 'root' in d else measure_root(x[np.argmax(np.abs(x) > 0.01 * np.abs(x).max()):]), x)]
         elif 'synth' in d:
             kind, p = d['synth']
             src = [(float(r), SYNTHS[kind](r, d['secs'], p)) for r in d['roots']]

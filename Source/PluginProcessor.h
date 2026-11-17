@@ -67,6 +67,7 @@ private:
     mc::Pattern shown;                      // message thread copy
     mc::Pattern audioPattern;               // audio thread copy
     std::vector<mc::Note> audioHeldChords;  // its chords held, for sets with sustained chord sounds
+    std::vector<mc::Note> audioRootChords;  // only its chord roots, for sets with stabs tuned to a chord
     std::array<int, 3> audioCenters {};     // median pitch of melody, bass, chords
     juce::SpinLock patternLock;
     std::atomic<bool> resetPosition { false };
