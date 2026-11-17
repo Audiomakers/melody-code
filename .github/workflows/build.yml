@@ -38,7 +38,8 @@ jobs:
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (!(Test-Path $iscc)) { choco install innosetup -y --no-progress; }
-          & $iscc installer/MelodyCode.iss
+          $v = (Select-String -Path CMakeLists.txt -Pattern 'project\(MelodyCode VERSION ([0-9.]+)').Matches[0].Groups[1].Value
+          & $iscc "/DAppVersion=$v" installer/MelodyCode.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Publish installer to the repo
         if: github.event_name != 'pull_request'
