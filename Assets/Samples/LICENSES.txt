@@ -1,9 +1,11 @@
 Melody Code - sample credits
 
-Piano: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0
-  https://archive.org/details/SalamanderGrandPianoV3 (via @audio-samples/piano-mp3)
-Nylon guitar, acoustic guitar, electric bass, harp, violin, cello: tonejs-instruments by Nicholaus P. Brosowsky
-  and the original sample authors, CC BY 3.0 - https://github.com/nbrosowsky/tonejs-instruments
+Orchestra (horn, clarinet, harp, string sections, pizzicato, spiccato, tuba, contrabass):
+  VSCO 2 Community Edition by Versilian Studios, CC0 1.0 (public domain)
+  https://github.com/sgossner/VSCO-2-CE
+Bells, flute, piano, violin, airy pluck, 808s and the other recorded one-shots:
+  Audio Makers sample packs (AMKR Trap Essentials, AMKR Quebrada, Submundo 808 Sample Pack)
+Electric piano, marimba, music box, bleep, cowbell, plucks, stabs and sub bass:
+  synthesized by Audio Makers (tools/build_sets.py)
 
-The samples were trimmed, level matched, looped and re-encoded by tools/build_samples.py.
-License: https://creativecommons.org/licenses/by/3.0/
+The samples were trimmed, tuned to their measured pitch, level matched, looped and re-encoded by tools/build_sets.py.

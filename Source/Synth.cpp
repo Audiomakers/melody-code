@@ -504,7 +504,7 @@ void Synth::render(float* left, float* right, int n) {
     auto glide = [k](float& a, float b) { a += (b - a) * k; };
     const Fx fxTarget = effective(this->fxTarget);
     const auto& P = tone::get(preset);
-    glide(cutNow, P.polish.lowCut); glide(widthNow, P.polish.width);
+    glide(cutNow, kit >= 0 ? 25.0f : P.polish.lowCut); glide(widthNow, P.polish.width);   // sets carry their own sub and 808: no low cut
     sinceMelody += n;
     const float hpA = onePole(cutNow, sr);
     glide(fx.lowpass, fxTarget.lowpass); glide(fx.highpass, fxTarget.highpass); glide(fx.chorus, fxTarget.chorus);
@@ -517,9 +517,9 @@ void Synth::render(float* left, float* right, int n) {
     for (int i = 0; i < n; ++i) {
         advance(wowPhase, 0.5 / sr); advance(flutterPhase, 5.5 / sr);
         const double ratio = fx.tape > 0.001f ? cents(fx.tape * (9.0 * std::sin(twoPi * wowPhase) + 2.5 * std::sin(twoPi * flutterPhase))) : 1.0;
-        float l = 0.0f, r = 0.0f;
+        float l = 0.0f, r = 0.0f, dryL = 0.0f, dryR = 0.0f;
         for (auto& v : voices) if (v.active) renderVoice(v, l, r, ratio);
-        if (kit >= 0) sampler.render(l, r);
+        if (kit >= 0) sampler.render(l, r, dryL, dryR);   // a set's bass stays out of the effects: dry and centred
         // preset polish: 12 dB/oct low cut (keeps the low end clean), then stereo width
         float x[2] { l, r };
         for (int c = 0; c < 2; ++c) {
@@ -529,6 +529,7 @@ void Synth::render(float* left, float* right, int n) {
         const float mid = 0.5f * (x[0] + x[1]), side = 0.5f * (x[0] - x[1]) * widthNow;
         l = mid + side; r = mid - side;
         processFx(l, r);
+        l += dryL; r += dryR;
         // peak limiter: instant attack, smooth release, ceiling -1 dBFS
         const float peak = std::max(std::abs(l), std::abs(r));
         limiterEnv = peak > limiterEnv ? peak : limiterEnv * rel + peak * (1.0f - rel);

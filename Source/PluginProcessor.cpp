@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include <map>
 #include "PluginEditor.h"
 
 MelodyCodeProcessor::MelodyCodeProcessor()
@@ -30,6 +31,37 @@ Synth::Fx fxFor(mc::Vibe v) {
     }
     return f;
 }
+// what the sets need from a pattern: the median pitch of each layer (melody, bass, chords)...
+std::array<int, 3> layerCenters(const mc::Pattern& p) {
+    auto median = [](const std::vector<mc::Note>& v) {
+        if (v.empty()) return 0;
+        std::vector<int> x; x.reserve(v.size());
+        for (const auto& n : v) x.push_back(n.pitch);
+        std::nth_element(x.begin(), x.begin() + (long) x.size() / 2, x.end());
+        return x[x.size() / 2];
+    };
+    return { median(p.melody), median(p.bass), median(p.chords) };
+}
+// ...and, for bowed or airy chord sounds, one held chord per change: the first hit's notes, held to the next change
+std::vector<mc::Note> heldChords(const mc::Pattern& p) {
+    std::map<int, std::vector<mc::Note>> byChord;
+    for (const auto& n : p.chords) byChord[p.chordIndexAt(n.start)].push_back(n);
+    std::vector<int> firsts;
+    for (auto& [ci, notes] : byChord) {
+        int first = notes.front().start;
+        for (const auto& n : notes) first = std::min(first, n.start);
+        firsts.push_back(first);
+    }
+    std::vector<mc::Note> out;
+    size_t k = 0;
+    for (auto& [ci, notes] : byChord) {
+        const int first = firsts[k], end = k + 1 < firsts.size() ? firsts[k + 1] : p.lengthTicks();
+        for (const auto& n : notes)
+            if (n.start == first) out.push_back({ first, std::max(1, end - first), n.pitch, n.velocity });
+        ++k;
+    }
+    return out;
+}
 const char* keyNames[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 }
 
@@ -53,8 +85,12 @@ void MelodyCodeProcessor::publish(mc::Pattern p, bool addHistory) {
     soundVibe = (int) p.settings.vibe;
     shown = p;
     {
+        auto held = heldChords(p);
+        const auto centers = layerCenters(p);
         const juce::SpinLock::ScopedLockType sl(patternLock);
         audioPattern = std::move(p);
+        audioHeldChords = std::move(held);
+        audioCenters = centers;
     }
     edited = false;
     if (addHistory) {
@@ -151,8 +187,9 @@ void MelodyCodeProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
                 position = t < 0 ? t + len : t;
             }
             const double from = position, to = position + n / samplesPerTick;
-            auto collect = [&](const std::vector<mc::Note>& notes, bool sub) {
-                const int layer = sub ? 1 : (&notes == &audioPattern.chords ? 2 : 0);
+            synth.setCenters(audioCenters[0], audioCenters[1], audioCenters[2]);
+            auto collect = [&](const std::vector<mc::Note>& notes, int layer) {
+                const bool sub = layer == 1;
                 for (const auto& note : notes)
                     for (double base : { 0.0, len }) {
                         const double t = note.start + base;
@@ -160,9 +197,9 @@ void MelodyCodeProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
                             events.push_back(BlockEvent { (int) ((t - from) * samplesPerTick), note, sub, layer });
                     }
             };
-            collect(audioPattern.bass, true);
-            collect(audioPattern.chords, false);
-            collect(audioPattern.melody, false);
+            collect(audioPattern.bass, 1);
+            collect(Sampler::kit(kit).sustainChords ? audioHeldChords : audioPattern.chords, 2);
+            collect(audioPattern.melody, 0);
             position = to;
             if (position >= len) position -= len;
             playhead = position;
@@ -200,7 +237,7 @@ void MelodyCodeProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     if (done < n) synth.render(l + done, r + done, n - done);
 }
 
-bool MelodyCodeProcessor::renderWav(const juce::File& file, bool allLayers) {
+bool MelodyCodeProcessor::renderWav(const juce::File& file, bool allLayers, int onlyLayer) {
     const auto p = shown;
     const double rate = 44100.0, tempo = bpm;
     const double samplesPerTick = rate * 60.0 / tempo / mc::ppq;
@@ -212,14 +249,18 @@ bool MelodyCodeProcessor::renderWav(const juce::File& file, bool allLayers) {
     s.setFx(fxFor(p.settings.vibe));
     s.setLevels(bassLevel, melodyLevel);
     s.setTempo(tempo);
+    const auto centers = layerCenters(p);
+    s.setCenters(centers[0], centers[1], centers[2]);
+    const auto held = heldChords(p);
     struct Ev { int at; mc::Note note; int layer; };
     std::vector<Ev> evs;
     for (int pass = 0; pass < 2; ++pass) {   // play the loop twice and keep the second: its start carries the first pass's tail
         auto add = [&](const std::vector<mc::Note>& notes, int layer) {
+            if (onlyLayer >= 0 && layer != onlyLayer) return;
             for (const auto& n : notes) evs.push_back({ pass * loopLen + (int) (n.start * samplesPerTick), n, layer });
         };
         add(p.melody, 0);
-        if (allLayers) { add(p.bass, 1); add(p.chords, 2); }
+        if (allLayers || onlyLayer >= 0) { add(p.bass, 1); add(Sampler::kit(kit).sustainChords ? held : p.chords, 2); }
     }
     std::sort(evs.begin(), evs.end(), [](const Ev& a, const Ev& b) { return a.at < b.at; });
     juce::AudioBuffer<float> buf(2, loopLen * 2);

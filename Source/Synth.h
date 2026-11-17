@@ -41,6 +41,7 @@ public:
         if (k >= 0 && Sampler::kit(k).synth >= 0) { kit = -1; setPreset(Sampler::kit(k).synth); return; }
         kit = k; if (k >= 0) sampler.setKit(k);
     }
+    void setCenters(int melody, int bass, int chords) { sampler.setCenters(melody, bass, chords); }
     void setTempo(double bpm) { beatSeconds = 60.0 / juce::jmax(30.0, bpm); }
     void setFx(const Fx& f) { fxTarget = f; }
     // layer: 0 melody, 1 bass, 2 chords (only the sample kits tell the layers apart)
