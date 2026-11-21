@@ -5,6 +5,54 @@ namespace {
 const char* noteNames[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 const char* roman[] { "I", "II", "III", "IV", "V", "VI", "VII" };
 juce::String utf8(const char* s) { return juce::String::fromUTF8(s); }
+
+// ---- files for SALVAR / ARRASTAR (same fixes as Chord Code on Windows) ----------------------
+// Everything goes through juce::File (wide Win32 API), so an accented user folder (C:\Users\João)
+// works. A write is checked on disk afterwards, because antivirus or "Controlled folder access"
+// can drop it silently.
+bool isPlainAscii(const juce::String& text) {
+    for (auto c : text) if (c > 127) return false;
+    return true;
+}
+
+bool writeBytes(const juce::File& file, const void* data, size_t size, juce::String& error) {
+    if (const auto made = file.getParentDirectory().createDirectory(); made.failed()) { error = made.getErrorMessage(); return false; }
+    if (!file.replaceWithData(data, size)) {
+        // replaceWithData writes a temp file and renames it; some antivirus / OneDrive setups block the rename
+        juce::FileOutputStream out(file);
+        if (!out.openedOk()) { error = out.getStatus().failed() ? out.getStatus().getErrorMessage() : juce::String::fromUTF8("sem permiss\xc3\xa3o de escrita"); return false; }
+        out.setPosition(0); out.truncate(); out.write(data, size); out.flush();
+        if (out.getStatus().failed()) { error = out.getStatus().getErrorMessage(); return false; }
+    }
+    if (!file.existsAsFile() || file.getSize() != (juce::int64) size) {
+        error = juce::String::fromUTF8("o arquivo n\xc3\xa3o ficou no disco (antiv\xc3\xadrus ou Acesso Controlado a Pastas?)");
+        return false;
+    }
+    return true;
+}
+
+// Where drag files are written, best first: plain-ASCII folders first (a few hosts mishandle dropped paths
+// with accents), protected folders (Documents, Music) last (Windows "Controlled folder access" blocks DAWs).
+juce::Array<juce::File> dragFolders() {
+    const auto sub = [](const juce::File& base) { return base.getChildFile("Audio Makers").getChildFile("Melody Code"); };
+    juce::Array<juce::File> candidates;
+    candidates.add(sub(juce::File::getSpecialLocation(juce::File::tempDirectory)));
+   #if JUCE_WINDOWS
+    if (const auto local = juce::SystemStats::getEnvironmentVariable("LOCALAPPDATA", {}); local.isNotEmpty()) candidates.add(sub(juce::File(local)).getChildFile("Arrastar"));
+    if (const auto pub = juce::SystemStats::getEnvironmentVariable("PUBLIC", {}); pub.isNotEmpty()) candidates.add(sub(juce::File(pub)).getChildFile("Arrastar"));
+    candidates.add(sub(juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory)).getChildFile("Arrastar"));
+   #endif
+    candidates.add(sub(juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)).getChildFile("Arrastar"));
+    candidates.add(sub(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)));
+    candidates.add(sub(juce::File::getSpecialLocation(juce::File::userMusicDirectory)));
+    juce::Array<juce::File> ascii, other;
+    for (const auto& dir : candidates) {
+        if (dir.getFullPathName().length() < 4 || ascii.contains(dir) || other.contains(dir)) continue;
+        (isPlainAscii(dir.getFullPathName()) ? ascii : other).add(dir);
+    }
+    ascii.addArray(other);
+    return ascii;
+}
 bool isBlack(int m) { const int pc = m % 12; return pc == 1 || pc == 3 || pc == 6 || pc == 8 || pc == 10; }
 }
 
@@ -673,7 +721,7 @@ void LicensePanel::paint(juce::Graphics& g) {
 void DragMidiButton::mouseDrag(const juce::MouseEvent& e) {
     if (e.getDistanceFromDragStart() < 6 || !files) return;
     if (auto list = files(); !list.isEmpty())
-        juce::DragAndDropContainer::performExternalDragDropOfFiles(list, false, this);
+        if (!juce::DragAndDropContainer::performExternalDragDropOfFiles(list, false, this) && dragFailed) dragFailed();
 }
 
 void LockButton::paintButton(juce::Graphics& g, bool over, bool) {
@@ -1006,18 +1054,22 @@ MelodyCodeEditor::MelodyCodeEditor(MelodyCodeProcessor& p) : AudioProcessorEdito
     newMel.onClick = [this] { proc.newMelody(); };
     gen.onClick = [this] { proc.generateAll(); };
     save.onClick = [this] { saveMidi(); };
-    dragBtn.onClick = [this] { showHint(utf8("Arraste este bot\xc3\xa3o para a sua DAW")); };
+    // A click (no drag) writes the files and opens their folder, so they can be dragged from there.
+    dragBtn.onClick = [this] { revealForDrag(false); };
+    dragBtn.dragFailed = [this] { revealForDrag(false); };
     dragBtn.files = [this] {
-        auto list = writeMidiFiles(juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("MelodyCode"), "Melody Code");
-        if (!proc.dragAllLayers.load()) list.removeRange(1, list.size() - 1);   // melody only
+        juce::String error;
+        auto list = dragMidiFiles(error);
+        if (list.isEmpty()) showProblem(utf8("N\xc3\xa3o deu pra criar o MIDI"), error.trim());
         return list;
     };
-    dragWav.onClick = [this] { showHint(utf8("Arraste este bot\xc3\xa3o para a sua DAW")); };
+    dragWav.onClick = [this] { revealForDrag(true); };
+    dragWav.dragFailed = [this] { revealForDrag(true); };
     dragWav.files = [this] {
-        const auto f = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("MelodyCode")
-                           .getChildFile(proc.dragAllLayers.load() ? "Melody Code - Full.wav" : "Melody Code - Melody.wav");
-        f.getParentDirectory().createDirectory();
-        return proc.renderWav(f, proc.dragAllLayers.load()) ? juce::StringArray(f.getFullPathName()) : juce::StringArray();
+        juce::String error;
+        const auto f = dragWavFile(error);
+        if (!f.existsAsFile()) { showProblem(utf8("N\xc3\xa3o deu pra criar o WAV"), error.trim()); return juce::StringArray(); }
+        return juce::StringArray(f.getFullPathName());
     };
     historyBtn.onClick = [this] {
         juce::PopupMenu m;
@@ -1106,19 +1158,64 @@ void MelodyCodeEditor::showHint(const juce::String& text) {
     content.repaint();
 }
 
-juce::StringArray MelodyCodeEditor::writeMidiFiles(const juce::File& folder, const juce::String& base) {
-    folder.createDirectory();
+juce::StringArray MelodyCodeEditor::writeMidiFiles(const juce::File& folder, const juce::String& base, juce::String& error) {
     const auto p = proc.pattern();
     juce::StringArray out;
     auto write = [&](const std::vector<mc::Note>& notes, const juce::String& suffix, int channel) {
         auto bytes = mc::midiBytes(notes, proc.bpm, channel, p.lengthTicks());
         auto f = folder.getChildFile(base + " - " + suffix + ".mid");
-        if (f.replaceWithData(bytes.data(), bytes.size())) out.add(f.getFullPathName());
+        juce::String why;
+        if (writeBytes(f, bytes.data(), bytes.size(), why)) out.add(f.getFullPathName());
+        else error << f.getFullPathName() << "  ->  " << why << "\n";
     };
     write(p.melody, "Melody", 0);
     write(p.bass, "Bass", 1);
     write(p.chords, "Chords", 2);
     return out;
+}
+
+juce::StringArray MelodyCodeEditor::dragMidiFiles(juce::String& error) {
+    for (const auto& dir : dragFolders()) {
+        auto list = writeMidiFiles(dir, "Melody Code", error);
+        if (list.size() == 3) {
+            if (!proc.dragAllLayers.load()) list.removeRange(1, list.size() - 1);   // melody only
+            return list;
+        }
+    }
+    return {};
+}
+
+juce::File MelodyCodeEditor::dragWavFile(juce::String& error) {
+    const bool all = proc.dragAllLayers.load();
+    for (const auto& dir : dragFolders()) {
+        const auto f = dir.getChildFile(all ? "Melody Code - Full.wav" : "Melody Code - Melody.wav");
+        if (const auto made = dir.createDirectory(); made.failed()) { error << dir.getFullPathName() << "  ->  " << made.getErrorMessage() << "\n"; continue; }
+        if (proc.renderWav(f, all) && f.existsAsFile() && f.getSize() > 44) return f;
+        error << f.getFullPathName() << "  ->  " << utf8("n\xc3\xa3o foi poss\xc3\xadvel gravar") << "\n";
+    }
+    return {};
+}
+
+void MelodyCodeEditor::revealForDrag(bool wav) {
+    juce::String error;
+    juce::File file;
+    if (wav) file = dragWavFile(error);
+    else if (const auto list = dragMidiFiles(error); !list.isEmpty()) file = juce::File(list[0]);
+    if (!file.existsAsFile()) {
+        showProblem(wav ? utf8("N\xc3\xa3o deu pra criar o WAV") : utf8("N\xc3\xa3o deu pra criar o MIDI"),
+                    utf8("O Windows bloqueou a grava\xc3\xa7\xc3\xa3o em todas as pastas que o Melody Code tentou.\n\n") + error.trim()
+                    + utf8("\n\nSe o \"Acesso controlado a pastas\" do Windows Defender estiver ligado, libere a sua DAW e o Melody Code nele."));
+        return;
+    }
+    file.revealToUser();
+    showProblem(wav ? utf8("WAV pronto") : utf8("MIDI pronto"),
+                utf8("Abrimos a pasta com o arquivo:\n") + file.getFileName()
+                + utf8("\n\nArraste ele da pasta direto para a sua DAW.\n(Dica: para arrastar do plugin, clique no bot\xc3\xa3o e, sem soltar, puxe at\xc3\xa9 a DAW.)"));
+}
+
+void MelodyCodeEditor::showProblem(const juce::String& title, const juce::String& message) {
+    juce::AlertWindow::showAsync(juce::MessageBoxOptions().withIconType(juce::MessageBoxIconType::NoIcon)
+                                     .withTitle(title).withMessage(message).withButton("OK").withAssociatedComponent(this), nullptr);
 }
 
 void MelodyCodeEditor::saveMidi() {
@@ -1127,8 +1224,19 @@ void MelodyCodeEditor::saveMidi() {
         [this](const juce::FileChooser& fc) {
             const auto f = fc.getResult();
             if (f == juce::File()) return;
-            const auto files = writeMidiFiles(f.getParentDirectory(), f.getFileNameWithoutExtension());
-            showHint(files.size() == 3 ? "Salvo: " + f.getFileNameWithoutExtension() + " - Melody, Bass e Chords.mid" : utf8("N\xc3\xa3o foi poss\xc3\xadvel salvar nessa pasta"));
+            juce::String why;
+            const auto files = writeMidiFiles(f.getParentDirectory(), f.getFileNameWithoutExtension(), why);
+            if (files.size() == 3) { showHint("Salvo: " + f.getFileNameWithoutExtension() + " - Melody, Bass e Chords.mid"); return; }
+            // the chosen folder refused the write (Controlled folder access, OneDrive offline...): save somewhere safe and show it
+            juce::String error;
+            for (const auto& dir : dragFolders())
+                if (const auto saved = writeMidiFiles(dir, f.getFileNameWithoutExtension(), error); saved.size() == 3) {
+                    juce::File(saved[0]).revealToUser();
+                    showProblem(utf8("MIDI salvo em outra pasta"), utf8("O Windows n\xc3\xa3o deixou salvar em:\n") + f.getParentDirectory().getFullPathName()
+                                + "\n(" + why.trim() + ")" + utf8("\n\nSalvamos aqui e abrimos a pasta:\n") + dir.getFullPathName());
+                    return;
+                }
+            showProblem(utf8("N\xc3\xa3o deu pra salvar o MIDI"), why.trim() + "\n\n" + error.trim());
         });
 }
 

@@ -144,6 +144,7 @@ class DragMidiButton : public ActionButton {
 public:
     using ActionButton::ActionButton;
     std::function<juce::StringArray()> files;
+    std::function<void()> dragFailed;   // the host refused the drag: show the files in a folder instead
     void mouseDrag(const juce::MouseEvent&) override;
 };
 
@@ -206,7 +207,11 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
     void syncControls();
-    juce::StringArray writeMidiFiles(const juce::File& folder, const juce::String& base);
+    juce::StringArray writeMidiFiles(const juce::File& folder, const juce::String& base, juce::String& error);
+    juce::StringArray dragMidiFiles(juce::String& error);
+    juce::File dragWavFile(juce::String& error);
+    void revealForDrag(bool wav);
+    void showProblem(const juce::String& title, const juce::String& message);
     void saveMidi();
     void refreshAfterSetting(bool harmonyToo);
     void showHint(const juce::String&);
