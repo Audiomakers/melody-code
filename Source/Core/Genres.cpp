@@ -169,7 +169,7 @@ const Engine& orchestral() {
         { S::naturalMinor, S::harmonicMinor, S::major, S::naturalMinor },
         { { { 0, 5, 2, 6 }, { tr, tr, tr, tr } }, { { 0, 3, 5, 4 }, { tr, tr, a9, tr } },
           { { 0, 5, 3, 4 }, { tr, a9, tr, tr } }, { { 5, 3, 0, 6 }, { tr, tr, tr, tr } } },
-        { { { 0, 4, 5, 3 }, { tr, tr, tr, a9 } }, { { 3, 0, 4, 5 }, { a9, tr, su2, tr } }, { { 0, 5, 3, 4 }, { tr, tr, a9, tr } } },
+        { { { 0, 4, 5, 3 }, { tr, tr, tr, a9 } }, { { 3, 0, 4, 5 }, { a9, tr, tr, tr } }, { { 0, 5, 3, 4 }, { tr, tr, a9, tr } } },
         { { 0, H, 0, H }, { 0, 0, 0, 0 }, { 0, 0, 8, 0 } },
         { { { 0, 8 }, { 8, 8 } },
           { { 0, 6 }, { 6, 2 }, { 8, 8 } },
@@ -298,7 +298,7 @@ const Engine& melodicTechno() {
     static const Engine e {
         "MELODIC TECHNO", "hypnotic sixteenth-note arpeggio that outlines dark minor chords, repeats, then opens up a step at a time",
         { S::naturalMinor, S::harmonicMinor, S::phrygian },
-        { { { 0, 5, 2, 6 }, { tr, tr, tr, tr } }, { { 0, 5, 3, 6 }, { tr, tr, tr, tr } }, { { 0, 0, 5, 5 }, { su2, su2, tr, tr } } },
+        { { { 0, 5, 2, 6 }, { tr, tr, tr, tr } }, { { 0, 5, 3, 6 }, { tr, tr, tr, tr } }, { { 0, 0, 5, 5 }, { tr, tr, tr, tr } } },
         { { { 5, 3, 0, 4 }, { tr, tr, tr, tr } } },
         { { 0, 0, 0, 0 }, { 0, H, 0, H } },
         { { { 0, 1 }, { 2, 1 }, { 4, 1 }, { 6, 1 }, { 8, 1 }, { 10, 1 }, { 12, 1 }, { 14, 1 } },
@@ -319,7 +319,7 @@ const Engine& trance() {
     static const Engine e {
         "TRANCE", "uplifting anthem lead: driving eighths and sixteenths that climb in sequences to a soaring peak",
         { S::naturalMinor, S::naturalMinor, S::harmonicMinor },
-        { { { 0, 5, 2, 6 }, { tr, tr, tr, tr } }, { { 5, 6, 0, 0 }, { tr, tr, tr, su2 } }, { { 0, 3, 5, 6 }, { tr, tr, tr, tr } } },
+        { { { 0, 5, 2, 6 }, { tr, tr, tr, tr } }, { { 5, 6, 0, 0 }, { tr, tr, tr, tr } }, { { 0, 3, 5, 6 }, { tr, tr, tr, tr } } },
         { { { 5, 3, 0, 4 }, { tr, tr, tr, tr } }, { { 0, 4, 5, 3 }, { tr, tr, tr, tr } } },
         { { 0, 0, 0, 0 } },
         { { { 0, 2 }, { 2, 2 }, { 4, 2 }, { 6, 2 }, { 8, 2 }, { 10, 2 }, { 12, 4 } },

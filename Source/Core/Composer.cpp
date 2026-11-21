@@ -213,7 +213,7 @@ std::vector<Ev> makeRhythm(const Context& ctx, Rng& r, int bars, double densityS
             if (c.tie) x = (b % 4 == 0 || out.empty()) ? 0 : 0.25 * ctx.vibe.length * (perBeat < 1.3 ? 1.5 : 0.5);
             if (c.synco > 0) x *= 0.4 + 1.6 * ctx.style.syncopation * c.synco;
             if (c.sixteenths > 0) x *= (ctx.density == Density::low ? 0.15 : 0.3) + 1.4 * ctx.style.sixteenths * (ctx.density == Density::high ? 1.6 : 1.0);
-            if (tripletFeel) x *= c.triplet ? 4.0 : 0.35;
+            if (tripletFeel) x *= c.triplet ? 5.0 : 0.3;
             if (b % 4 == 0 && c.notes.empty()) x *= b == 0 ? 0.05 : 0.5;          // phrases start, bars rarely open on silence
             w[i] = std::max(0.0, x);
         }
