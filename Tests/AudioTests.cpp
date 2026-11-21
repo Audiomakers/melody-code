@@ -196,9 +196,9 @@ int main() {
     }
     // MC_DEMO_DIR=<folder>: one full-mix WAV per sound set, in a style that suits it, plus its three stems
     if (const char* dir = std::getenv("MC_DEMO_DIR")) {
-        const mc::Style styles[] { mc::Style::rnb, mc::Style::lofi, mc::Style::lofi, mc::Style::trap, mc::Style::reggaeton, mc::Style::deepHouse,
-                                   mc::Style::techHouse, mc::Style::trance, mc::Style::techHouse, mc::Style::melodicTechno, mc::Style::funkBR, mc::Style::orchestral };
-        const int tempos[] { 88, 80, 80, 140, 95, 122, 126, 138, 126, 124, 130, 76 };
+        const mc::Style styles[] { mc::Style::pop, mc::Style::rnb, mc::Style::mpb, mc::Style::lofi, mc::Style::lofi, mc::Style::reggaeton,
+                                   mc::Style::techHouse, mc::Style::trance, mc::Style::melodicTechno, mc::Style::orchestral };
+        const int tempos[] { 96, 86, 92, 80, 80, 95, 126, 138, 124, 76 };
         static_assert(std::size(styles) == Sets::kitCount && std::size(tempos) == Sets::kitCount);
         const char* stems[] { "melodia", "grave", "acordes" };
         for (int k = 0; k < Sets::kitCount; ++k) {

@@ -5,8 +5,8 @@
 
 // Synthesized instruments, grouped in sound sets ("conjuntos"). A set gives each layer (melody, chords, bass)
 // its own patch. A patch is plain data (Sets.cpp): oscillators (analog shapes, supersaw, FM, additive partials,
-// plucked string), a filter with its own envelope, amp and pitch envelopes, drive, glide and vibrato.
-// Everything is generated here, no samples.
+// plucked string, or the sampled piano), a filter with its own envelope, amp and pitch envelopes, drive, glide
+// and vibrato. The piano is the only recording: Upright Piano KW (CC0), see tools/build_piano.py.
 class Sets {
 public:
     struct Kit {
@@ -15,7 +15,7 @@ public:
         bool sustainChords { false };   // pad-like chord sounds: one held chord per change instead of the style's rhythm
         bool rootChords { false };      // stabs that already sound like a chord: play only each chord's root
     };
-    static constexpr int kitCount = 12;
+    static constexpr int kitCount = 10;
     static const Kit& kit(int);
 
     void prepare(double sampleRate);
@@ -48,6 +48,7 @@ private:
         float noiseLp {}, fenv {}, fK {};
         uint32_t rng { 0x9e3779b9 };
         std::vector<float> ks; int ksPos {}; double ksDelay {}; float ksLoss {}, ksLast {};
+        int zone { -1 }; double spos {}, sinc {};   // piano sample being played
     };
     void start(Voice&, const Patch&, int pitch, float vel, int length, int layer, const Voice* legatoFrom);
     void renderVoice(Voice&, float& l, float& r);
