@@ -60,7 +60,7 @@ public:
     float bassLevel { 0.7f }, melodyLevel { 0.8f }, chordLevel { 0.8f };
 
 private:
-    void publish(mc::Pattern, bool addHistory = true);
+    void publish(mc::Pattern, bool addHistory = true, bool restart = true);
 
     mc::Engine engine;
     mc::Settings current;

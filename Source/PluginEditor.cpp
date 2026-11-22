@@ -62,6 +62,12 @@ juce::Font font(float h, bool bold) {
     static auto heavy = juce::Typeface::createSystemTypefaceFor(EmbeddedFonts::interBold, EmbeddedFonts::interBoldSize);
     return juce::Font(juce::FontOptions(bold ? heavy : regular).withHeight(h));
 }
+juce::Font semi(float h) {
+    static auto face = juce::Typeface::createSystemTypefaceFor(EmbeddedFonts::interSemiBold, EmbeddedFonts::interSemiBoldSize);
+    return juce::Font(juce::FontOptions(face).withHeight(h));
+}
+juce::Font label(float h) { return semi(h).withExtraKerningFactor(AMUI::kerningLabel); }
+juce::Font button(float h) { return semi(h).withExtraKerningFactor(AMUI::kerningButton); }
 juce::ColourGradient accent(juce::Rectangle<float> r) {
     return juce::ColourGradient(acc, r.getX(), r.getY(), acc2, r.getRight(), r.getBottom(), false);
 }
@@ -84,45 +90,43 @@ MelodyLook::MelodyLook() {
     setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
 }
 
-void MelodyLook::drawComboBox(juce::Graphics& g, int w, int h, bool, int, int, int, int, juce::ComboBox& box) {
+void MelodyLook::drawComboBox(juce::Graphics& g, int w, int h, bool down, int, int, int, int, juce::ComboBox& box) {
+    using namespace Theme;
     auto r = juce::Rectangle<float>(0, 0, (float) w, (float) h).reduced(0.5f);
-    const bool small = h < 34;
-    g.setColour(small ? juce::Colour(0xaa000000) : Theme::panel2);
-    g.fillRoundedRectangle(r, small ? 7.0f : 10.0f);
-    g.setColour(box.hasKeyboardFocus(false) || box.isMouseOver(true) ? Theme::acc.withAlpha(0.6f) : Theme::line);
-    g.drawRoundedRectangle(r, small ? 7.0f : 10.0f, 1.0f);
-    juce::Path arrow;
-    const float cx = (float) w - (small ? 13.0f : 20.0f), cy = (float) h * 0.5f;
-    arrow.startNewSubPath(cx - 5, cy - 2.5f); arrow.lineTo(cx, cy + 2.5f); arrow.lineTo(cx + 5, cy - 2.5f);
-    g.setColour(Theme::mute);
-    g.strokePath(arrow, juce::PathStrokeType(2.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    const bool small = h < 34, over = box.isMouseOver(true), open = box.isPopupActive() || down;
+    const float radius = small ? 8.0f : AMUI::Size::radiusControl;
+    g.setColour(small ? bg : (over ? hover : panel2));
+    g.fillRoundedRectangle(r, radius);
+    g.setColour(open ? acc : over || box.hasKeyboardFocus(false) ? acc.withAlpha(0.6f) : line);
+    g.drawRoundedRectangle(r, radius, 1.0f);
+    const float s = small ? 14.0f : 16.0f;
+    drawIcon(g, Icon::chevron, { (float) w - (small ? 8.0f : 14.0f) - s, ((float) h - s) * 0.5f, s, s }, open || over ? acc : mute);
 }
 
 void MelodyLook::positionComboBoxText(juce::ComboBox& box, juce::Label& label) {
     const bool small = box.getHeight() < 34;
-    label.setBounds(small ? 6 : 12, 1, box.getWidth() - (small ? 26 : 40), box.getHeight() - 2);
-    label.setFont(small ? Theme::font(13.0f, true) : Theme::font(16.0f, true));
+    label.setBounds(small ? 4 : 8, 1, box.getWidth() - (small ? 24 : 40), box.getHeight() - 2);
+    label.setFont(small ? Theme::semi(13.0f) : Theme::semi(15.0f));
 }
 
 void MelodyLook::drawPopupMenuBackground(juce::Graphics& g, int w, int h) {
     g.fillAll(Theme::panel2);
-    g.setColour(Theme::line);
+    g.setColour(Theme::line2);
     g.drawRect(0, 0, w, h);
 }
 
 void MelodyLook::drawLinearSlider(juce::Graphics& g, int x, int y, int w, int h, float pos, float, float,
                                   juce::Slider::SliderStyle, juce::Slider&) {
     const float cy = (float) y + (float) h * 0.5f;
-    auto track = juce::Rectangle<float>((float) x, cy - 3, (float) w, 6);
-    g.setColour(Theme::line);
-    g.fillRoundedRectangle(track, 3);
-    auto fill = track.withRight(pos);
+    auto track = juce::Rectangle<float>((float) x, cy - 2, (float) w, 4);
+    g.setColour(Theme::line2);
+    g.fillRoundedRectangle(track, 2);
     g.setGradientFill(Theme::accent(track));
-    g.fillRoundedRectangle(fill, 3);
+    g.fillRoundedRectangle(track.withRight(pos), 2);
+    g.setColour(Theme::acc.withAlpha(0.35f));
+    g.fillEllipse(pos - 11, cy - 11, 22, 22);
     g.setColour(Theme::fg);
     g.fillEllipse(pos - 8, cy - 8, 16, 16);
-    g.setColour(Theme::acc);
-    g.drawEllipse(pos - 8, cy - 8, 16, 16, 2);
 }
 
 // ---------------------------------------------------------------- small widgets
@@ -148,15 +152,17 @@ juce::Rectangle<int> MelodyLook::getTooltipBounds(const juce::String& text, juce
 
 void MelodyLook::drawTooltip(juce::Graphics& g, const juce::String& text, int w, int h) {
     const auto r = juce::Rectangle<float>(0, 0, (float) w, (float) h);
-    g.setColour(Theme::panel2.darker(0.2f)); g.fillRoundedRectangle(r, 8);
-    g.setColour(Theme::acc.withAlpha(0.6f)); g.drawRoundedRectangle(r.reduced(0.5f), 8, 1);
+    g.setColour(Theme::panel2); g.fillRoundedRectangle(r, 8);
+    g.setColour(Theme::line2); g.drawRoundedRectangle(r.reduced(0.5f), 8, 1);
     tooltipLayout(text).draw(g, r.reduced(14, 10));
 }
 
 void Segmented::paint(juce::Graphics& g) {
     auto r = getLocalBounds().toFloat();
-    g.setColour(juce::Colour(0xff0b0e15));
-    g.fillRoundedRectangle(r, 9);
+    g.setColour(Theme::bg);
+    g.fillRoundedRectangle(r, AMUI::Size::radiusControl);
+    g.setColour(Theme::line);
+    g.drawRoundedRectangle(r.reduced(0.5f), AMUI::Size::radiusControl, 1.0f);
     const float w = (r.getWidth() - 6) / (float) options.size();
     for (int i = 0; i < options.size(); ++i) {
         auto c = juce::Rectangle<float>(3 + w * (float) i, 3, w, r.getHeight() - 6);
@@ -165,7 +171,7 @@ void Segmented::paint(juce::Graphics& g) {
             g.fillRoundedRectangle(c, 7);
         }
         g.setColour(i == selected ? Theme::ink : Theme::mute);
-        g.setFont(Theme::font(12.5f, true).withExtraKerningFactor(0.08f));
+        g.setFont(Theme::button(12.0f));
         g.drawText(options[i], c, juce::Justification::centred);
     }
 }
@@ -175,181 +181,65 @@ void Segmented::mouseDown(const juce::MouseEvent& e) {
     if (i != selected) { selected = i; repaint(); if (onChange) onChange(i); }
 }
 
-void drawIcon(juce::Graphics& g, Icon icon, juce::Rectangle<float> r, juce::Colour c) {
-    g.setColour(c);
-    const juce::PathStrokeType stroke(1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
-    const float x = r.getX(), y = r.getY(), w = r.getWidth(), h = r.getHeight(), cx = r.getCentreX(), cy = r.getCentreY();
-    auto arrowHead = [&](juce::Point<float> tip, float angle) {
-        juce::Path a;
-        a.addTriangle(tip, tip + juce::Point<float>(std::cos(angle + 2.5f), std::sin(angle + 2.5f)) * 5.5f,
-                      tip + juce::Point<float>(std::cos(angle - 2.5f), std::sin(angle - 2.5f)) * 5.5f);
-        g.fillPath(a);
-    };
-    switch (icon) {
-        case Icon::play: {
-            juce::Path p; p.addTriangle(x + w * 0.22f, y + h * 0.12f, x + w * 0.22f, y + h * 0.88f, x + w * 0.88f, cy);
-            g.fillPath(p); break;
-        }
-        case Icon::stop: g.fillRoundedRectangle(r.reduced(w * 0.2f), 2.0f); break;
-        case Icon::variation: {   // refresh: two arcs, each ending in an arrow head
-            const float rad = w * 0.36f;
-            const juce::PathStrokeType arc(1.9f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
-            for (int k = 0; k < 2; ++k) {
-                const float a0 = k ? 3.4f : 0.26f, a1 = a0 + 2.45f;   // radians, clockwise from 12 o'clock
-                juce::Path p; p.addCentredArc(cx, cy, rad, rad, 0, a0, a1, true);
-                g.strokePath(p, arc);
-                const juce::Point<float> tip { cx + rad * std::sin(a1), cy - rad * std::cos(a1) };
-                const float dir = a1 + juce::MathConstants<float>::halfPi;            // tangent, clockwise
-                const juce::Point<float> fwd { std::sin(dir), -std::cos(dir) }, side { -fwd.y, fwd.x };
-                juce::Path head;
-                head.addTriangle(tip + fwd * 3.2f, tip - fwd * 2.2f + side * 3.4f, tip - fwd * 2.2f - side * 3.4f);
-                g.fillPath(head);
-            }
-            break;
-        }
-        case Icon::random: {      // new melody: two beamed eighth notes
-            const float hw = w * 0.30f, hh = h * 0.22f;
-            const float x1 = x + w * 0.06f, x2 = x + w * 0.56f, yb1 = y + h * 0.78f, yb2 = y + h * 0.70f;
-            g.fillEllipse(x1, yb1 - hh * 0.5f, hw, hh);
-            g.fillEllipse(x2, yb2 - hh * 0.5f, hw, hh);
-            const float s1 = x1 + hw - 1.6f, s2 = x2 + hw - 1.6f, top1 = y + h * 0.16f, top2 = y + h * 0.06f;
-            g.fillRect(s1, top1, 1.8f, yb1 - top1);
-            g.fillRect(s2, top2, 1.8f, yb2 - top2);
-            juce::Path beam;
-            beam.startNewSubPath(s1, top1); beam.lineTo(s2 + 1.8f, top2); beam.lineTo(s2 + 1.8f, top2 + 3.2f); beam.lineTo(s1, top1 + 3.2f); beam.closeSubPath();
-            g.fillPath(beam);
-            break;
-        }
-        case Icon::sparkle: {     // generate: a four-point star and a small one
-            auto star = [&](float sx, float sy, float s) {
-                juce::Path p;
-                p.startNewSubPath(sx, sy - s);
-                p.quadraticTo(sx, sy, sx + s, sy); p.quadraticTo(sx, sy, sx, sy + s);
-                p.quadraticTo(sx, sy, sx - s, sy); p.quadraticTo(sx, sy, sx, sy - s);
-                p.closeSubPath(); g.fillPath(p);
-            };
-            star(cx - w * 0.08f, cy + h * 0.06f, w * 0.42f);
-            star(x + w * 0.86f, y + h * 0.16f, w * 0.18f);
-            break;
-        }
-        case Icon::sub: {         // a low sine wave on a baseline
-            juce::Path p;
-            for (int i = 0; i <= 24; ++i) {
-                const float t = (float) i / 24.0f;
-                const juce::Point<float> pt { x + t * w, cy - std::sin(t * juce::MathConstants<float>::twoPi) * h * 0.32f };
-                if (i == 0) p.startNewSubPath(pt); else p.lineTo(pt);
-            }
-            g.strokePath(p, stroke);
-            g.drawLine(x, y + h - 1, x + w, y + h - 1, 1.2f);
-            break;
-        }
-        case Icon::midi: {        // a small keyboard: three white keys, two black keys
-            const auto k = juce::Rectangle<float>(x + 0.5f, y + h * 0.1f, w - 1.0f, h * 0.8f);
-            g.drawRoundedRectangle(k, 2.0f, 1.6f);
-            const float kw = k.getWidth() / 3.0f;
-            for (int i = 1; i < 3; ++i) g.fillRect(k.getX() + kw * (float) i - 0.6f, k.getY() + k.getHeight() * 0.55f, 1.3f, k.getHeight() * 0.45f);
-            for (int i = 1; i < 3; ++i) g.fillRoundedRectangle(k.getX() + kw * (float) i - kw * 0.28f, k.getY(), kw * 0.56f, k.getHeight() * 0.58f, 1.0f);
-            break;
-        }
-        case Icon::wave: {        // audio file: waveform bars
-            const float hs[] { 0.25f, 0.55f, 0.9f, 0.6f, 1.0f, 0.45f, 0.7f, 0.3f };
-            for (int i = 0; i < 8; ++i) {
-                const float bx = x + w * ((float) i + 0.5f) / 8.0f, bh = h * hs[i] * 0.9f;
-                g.drawLine(bx, cy - bh / 2, bx, cy + bh / 2, 1.8f);
-            }
-            break;
-        }
-        case Icon::save:
-            g.drawLine(cx, y + 1, cx, y + h - 6, 1.8f);
-            g.drawLine(cx, y + h - 6, cx - 5, y + h - 11, 1.8f);
-            g.drawLine(cx, y + h - 6, cx + 5, y + h - 11, 1.8f);
-            g.drawLine(x + 2, y + h - 1, x + w - 2, y + h - 1, 1.8f);
-            break;
-        case Icon::history:
-            g.drawEllipse(r.reduced(2), 1.7f);
-            g.drawLine(cx, y + 5, cx, cy, 1.7f);
-            g.drawLine(cx, cy, x + w - 5, cy + 3, 1.7f);
-            break;
-        case Icon::gear: {
-            const float outer = std::min(w, h) * 0.46f;
-            juce::Path p;
-            for (int i = 0; i < 16; ++i) {
-                const float a = juce::MathConstants<float>::twoPi * (float) i / 16.0f;
-                const float rad = (i % 2 == 0) ? outer : outer * 0.77f;
-                const auto pt = r.getCentre() + juce::Point<float>(std::cos(a), std::sin(a)) * rad;
-                if (i == 0) p.startNewSubPath(pt); else p.lineTo(pt);
-            }
-            p.closeSubPath();
-            g.strokePath(p, juce::PathStrokeType(1.6f));
-            g.drawEllipse(juce::Rectangle<float>(w * 0.36f, w * 0.36f).withCentre(r.getCentre()), 1.6f);
-            break;
-        }
-        case Icon::none: break;
-    }
-}
-
+// Audio Makers UI buttons: same corner (10) and the same 13 px SemiBold label for every size; only GERAR is the hero.
 void ActionButton::paintButton(juce::Graphics& g, bool over, bool down) {
+    using namespace Theme;
     auto r = getLocalBounds().toFloat().reduced(0.5f);
-    juce::Colour textColour;
-    juce::Font f = Theme::font(13.0f, true).withExtraKerningFactor(0.1f);
-    float iconSize = 16.0f;
+    const float radius = AMUI::Size::radiusControl;
+    const bool enabled = isEnabled();
+    juce::Colour textColour, iconColour;
     if (isAccent) {
-        juce::Path p; p.addRoundedRectangle(r, 12);
-        juce::DropShadow(Theme::acc.withAlpha(over ? 0.45f : 0.3f), 22, {}).drawForPath(g, p);
-        g.setGradientFill(Theme::accent(r));
+        juce::Path p; p.addRoundedRectangle(r, radius);
+        if (enabled) juce::DropShadow(acc.withAlpha(over ? 0.38f : 0.24f), hero ? 22 : 14, { 0, 4 }).drawForPath(g, p);
+        g.setGradientFill(accent(r));
         g.fillPath(p);
-        if (down) { g.setColour(juce::Colours::black.withAlpha(0.15f)); g.fillPath(p); }
-        textColour = Theme::ink;
-        f = Theme::font(24.0f, true).withExtraKerningFactor(0.3f);
-        iconSize = 22.0f;
+        if (over) { g.setColour(juce::Colours::white.withAlpha(0.08f)); g.fillPath(p); }
+        if (down || !enabled) { g.setColour(juce::Colours::black.withAlpha(0.18f)); g.fillPath(p); }
+        textColour = iconColour = ink;
     } else {
-        g.setColour(down ? Theme::panel : Theme::panel2);
-        g.fillRoundedRectangle(r, 12);
-        g.setColour(lit || over ? Theme::acc : Theme::line);
-        g.drawRoundedRectangle(r, 12, lit ? 1.6f : 1.0f);
-        textColour = lit ? Theme::acc : Theme::fg;
+        g.setColour(down ? panel : over ? hover : panel2);
+        g.fillRoundedRectangle(r, radius);
+        g.setColour(lit ? acc : over ? acc.withAlpha(0.6f) : line);
+        g.drawRoundedRectangle(r, radius, lit ? 1.5f : 1.0f);
+        textColour = lit ? acc : fg;
+        iconColour = lit || over ? acc : mute;
     }
-    g.setFont(f);
+    juce::Font f = hero ? semi(15.0f).withExtraKerningFactor(AMUI::kerningHero) : button(13.0f);
+    const float iconSize = (float) AMUI::Size::icon, gap = 8.0f;
     const auto text = getButtonText();
-    if (icon == Icon::none) {
+    float tw = juce::GlyphArrangement::getStringWidth(f, text);
+    const float room = r.getWidth() - 24.0f - (icon == Icon::none ? 0.0f : iconSize + gap);
+    if (tw > room) { f = button(12.0f); tw = juce::GlyphArrangement::getStringWidth(f, text); }
+    g.setFont(f);
+    if (icon == Icon::none || tw > room) {
         g.setColour(textColour);
-        g.drawFittedText(text, getLocalBounds().reduced(6), juce::Justification::centred, 2);
+        g.drawFittedText(text, getLocalBounds().reduced(8, 0), juce::Justification::centred, 1, 0.9f);
         return;
     }
-    const float gap = 8.0f;
-    const float maxText = r.getWidth() - iconSize - gap - 16.0f;
-    float tw = juce::GlyphArrangement::getStringWidth(f, text);
-    if (!isAccent)   // tighten the label before falling back to the stacked layout
-        for (float size : { 12.5f, 12.0f, 11.5f }) {
-            if (tw <= maxText) break;
-            f = Theme::font(size, true).withExtraKerningFactor(0.04f);
-            g.setFont(f);
-            tw = juce::GlyphArrangement::getStringWidth(f, text);
-        }
-    if (tw <= maxText) {   // icon and label on one line
-        const float total = iconSize + gap + tw;
-        const float x0 = r.getCentreX() - total / 2;
-        drawIcon(g, icon, { x0, r.getCentreY() - iconSize / 2, iconSize, iconSize }, isAccent ? Theme::ink : (lit ? Theme::acc : Theme::acc.interpolatedWith(Theme::fg, 0.35f)));
-        g.setColour(textColour);
-        g.drawText(text, juce::Rectangle<float>(x0 + iconSize + gap, r.getY(), tw + 4, r.getHeight()), juce::Justification::centredLeft);
-    } else {               // narrow button: icon above, label below
-        drawIcon(g, icon, { r.getCentreX() - 8, r.getY() + 9, 16, 16 }, lit ? Theme::acc : Theme::acc.interpolatedWith(Theme::fg, 0.35f));
-        g.setColour(textColour);
-        g.setFont(Theme::font(11.5f, true).withExtraKerningFactor(0.08f));
-        g.drawFittedText(text, getLocalBounds().reduced(4).withTrimmedTop(26), juce::Justification::centred, 1);
-    }
+    const float total = iconSize + gap + tw;
+    const float x0 = std::round(r.getCentreX() - total / 2);
+    drawIcon(g, icon, { x0, r.getCentreY() - iconSize / 2, iconSize, iconSize }, iconColour);
+    g.setColour(textColour);
+    g.drawText(text, juce::Rectangle<float>(x0 + iconSize + gap, r.getY(), tw + 4, r.getHeight()), juce::Justification::centredLeft);
 }
 
 void IconButton::paintButton(juce::Graphics& g, bool over, bool down) {
+    using namespace Theme;
     auto r = getLocalBounds().toFloat().reduced(0.5f);
-    g.setColour(down ? Theme::panel : over ? Theme::panel2.brighter(0.08f) : Theme::panel2);
-    g.fillEllipse(r);
-    g.setColour(over ? Theme::acc : Theme::line);
-    g.drawEllipse(r, 1.0f);
-    drawIcon(g, icon, r.reduced(r.getWidth() * 0.26f), over ? Theme::acc : Theme::mute.brighter(0.3f));
+    if (ghost) {
+        if (over || down) { g.setColour(down ? line : line.withAlpha(0.7f)); g.fillRoundedRectangle(r, 8.0f); }
+        drawIcon(g, icon, juce::Rectangle<float>(16, 16).withCentre(r.getCentre()), over ? acc : mute);
+        return;
+    }
+    g.setColour(down ? panel : over ? hover : panel2);
+    g.fillRoundedRectangle(r, AMUI::Size::radiusControl);
+    g.setColour(over ? acc.withAlpha(0.6f) : line);
+    g.drawRoundedRectangle(r, AMUI::Size::radiusControl, 1.0f);
+    drawIcon(g, icon, juce::Rectangle<float>(20, 20).withCentre(r.getCentre()), over ? acc : mute);
     if (dot) {
-        g.setColour(juce::Colour(0xffffc83d));
-        g.fillEllipse(juce::Rectangle<float>(10, 10).withCentre({ r.getRight() - 6, r.getY() + 6 }));
+        const auto c = juce::Point<float>(r.getRight() - 2, r.getY() + 2);
+        g.setColour(bg); g.fillEllipse(juce::Rectangle<float>(14, 14).withCentre(c));
+        g.setColour(warn); g.fillEllipse(juce::Rectangle<float>(9, 9).withCentre(c));
     }
 }
 
@@ -458,25 +348,25 @@ SettingsPanel::SettingsPanel(MelodyCodeProcessor& p, UpdateStatus& u, std::funct
 void SettingsPanel::paint(juce::Graphics& g) {
     using namespace Theme;
     auto all = getLocalBounds().toFloat();
-    g.setGradientFill(juce::ColourGradient(panel2, 0, 0, panel, 0, all.getHeight(), false));
-    g.fillRoundedRectangle(all, 16);
-    g.setGradientFill(juce::ColourGradient(acc.withAlpha(0.10f), all.getCentreX(), 0, acc.withAlpha(0.0f), all.getCentreX(), 90, false));
-    g.fillRoundedRectangle(all, 16);
+    g.setColour(panel);
+    g.fillRoundedRectangle(all, AMUI::Size::radiusWindow);
+    g.setGradientFill(juce::ColourGradient(acc.withAlpha(0.10f), 0, 0, acc.withAlpha(0.0f), 0, 90, false));
+    g.fillRoundedRectangle(all, AMUI::Size::radiusWindow);
     g.setColour(line);
-    g.drawRoundedRectangle(all.reduced(0.5f), 16, 1);
+    g.drawRoundedRectangle(all.reduced(0.5f), AMUI::Size::radiusWindow, 1);
 
     auto section = [&](const juce::String& t, float y) {
-        g.setColour(mute); g.setFont(font(11.5f, true).withExtraKerningFactor(0.15f));
+        g.setColour(mute); g.setFont(label());
         g.drawText(t, juce::Rectangle<float>(18, y, 260, 16), juce::Justification::centredLeft);
     };
     auto divider = [&](float y) { g.setColour(line); g.fillRect(18.0f, y, panelWidth - 36.0f, 1.0f); };
     auto toggle = [&](juce::Rectangle<float> row, const juce::String& title, bool on, const juce::String& note) {
-        g.setColour(isOver(row) ? panel2.brighter(0.06f) : panel2);
+        g.setColour(isOver(row) ? hover : panel2);
         g.fillRoundedRectangle(row, 10);
-        g.setColour(fg); g.setFont(font(14.5f, true));
+        g.setColour(fg); g.setFont(semi(14.0f));
         g.drawText(title, row.withTrimmedLeft(12), juce::Justification::centredLeft);
         auto track = juce::Rectangle<float>(40, 22).withCentre({ row.getRight() - 32, row.getCentreY() });
-        if (on) g.setGradientFill(accent(track)); else g.setColour(juce::Colour(0xff2a2f3d));
+        if (on) g.setGradientFill(accent(track)); else g.setColour(line2);
         g.fillRoundedRectangle(track, 11);
         g.setColour(fg);
         g.fillEllipse(juce::Rectangle<float>(16, 16).withCentre({ on ? track.getRight() - 11 : track.getX() + 11, track.getCentreY() }));
@@ -484,24 +374,22 @@ void SettingsPanel::paint(juce::Graphics& g) {
     };
 
     auto mark = juce::Rectangle<float>(18, 18, 34, 34);
-    g.setGradientFill(accent(mark)); g.fillRoundedRectangle(mark, 9);
-    drawIcon(g, Icon::gear, mark.reduced(8), ink);
-    g.setColour(mute); g.setFont(font(11.5f, true).withExtraKerningFactor(0.15f));
+    g.setColour(acc.withAlpha(0.12f)); g.fillRoundedRectangle(mark, 9);
+    g.setColour(acc.withAlpha(0.35f)); g.drawRoundedRectangle(mark.reduced(0.5f), 9, 1);
+    drawIcon(g, Icon::gear, juce::Rectangle<float>(18, 18).withCentre(mark.getCentre()), acc);
+    g.setColour(mute); g.setFont(label());
     g.drawText(juce::String::fromUTF8("CONFIGURAÇÕES"), 62, 17, 200, 16, juce::Justification::centredLeft);
-    g.setColour(fg); g.setFont(font(19.0f, true));
+    g.setColour(fg); g.setFont(font(18.0f, true));
     g.drawText("Melody Code", 62, 32, 140, 24, juce::Justification::centredLeft);
     auto ver = juce::Rectangle<float>(190, 34, 62, 22);
     g.setColour(acc.withAlpha(0.12f)); g.fillRoundedRectangle(ver, 11);
     g.setColour(acc.withAlpha(0.4f)); g.drawRoundedRectangle(ver.reduced(0.5f), 11, 1);
-    g.setColour(acc); g.setFont(font(12.5f, true));
+    g.setColour(acc); g.setFont(semi(12.5f));
     g.drawText("v" JucePlugin_VersionString, ver, juce::Justification::centred);
     {
         const auto c = closeArea();
-        g.setColour(isOver(c) ? panel2.brighter(0.1f) : panel2); g.fillEllipse(c);
-        g.setColour(isOver(c) ? fg : mute);
-        const auto x = c.reduced(c.getWidth() * 0.34f);
-        g.drawLine({ x.getTopLeft(), x.getBottomRight() }, 1.6f);
-        g.drawLine({ x.getBottomLeft(), x.getTopRight() }, 1.6f);
+        if (isOver(c)) { g.setColour(line); g.fillRoundedRectangle(c, 8); }
+        drawIcon(g, Icon::close, juce::Rectangle<float>(16, 16).withCentre(c.getCentre()), isOver(c) ? fg : mute);
     }
     divider(70);
 
@@ -513,10 +401,10 @@ void SettingsPanel::paint(juce::Graphics& g) {
         const bool active = proc.bpm == bpmValues[i];
         if (active) { g.setGradientFill(accent(r)); g.fillRoundedRectangle(r, 8); }
         else {
-            g.setColour(isOver(r) ? panel2.brighter(0.06f) : panel2); g.fillRoundedRectangle(r, 8);
+            g.setColour(isOver(r) ? hover : panel2); g.fillRoundedRectangle(r, 8);
             g.setColour(isOver(r) ? acc.withAlpha(0.7f) : line); g.drawRoundedRectangle(r.reduced(0.5f), 8, 1);
         }
-        g.setColour(active ? ink : fg); g.setFont(font(14.5f, true));
+        g.setColour(active ? ink : fg); g.setFont(semi(14.0f));
         g.drawText(juce::String(bpmValues[i]), r, juce::Justification::centred);
     }
     g.setColour(quiet.brighter(0.4f)); g.setFont(font(12.0f));
@@ -534,7 +422,7 @@ void SettingsPanel::paint(juce::Graphics& g) {
     section("ARRASTAR", 380);
     toggle(dragRow(), "Incluir acordes e grave", proc.dragAllLayers.load(), {});
     g.setColour(quiet.brighter(0.4f)); g.setFont(font(12.0f));
-    g.drawFittedText(juce::String::fromUTF8("Desligado, ARRASTAR MIDI e WAV levam só a melodia. Ligado, levam melodia, acordes e grave."),
+    g.drawFittedText(juce::String::fromUTF8("Desligado, os botões MIDI e WAV levam só a melodia. Ligado, levam melodia, acordes e grave."),
                      juce::Rectangle<int>(18, 448, panelWidth - 36, 32), juce::Justification::centredLeft, 2, 1.0f);
     divider(486);
 
@@ -546,10 +434,10 @@ void SettingsPanel::paint(juce::Graphics& g) {
             const bool active = std::abs(current - scaleValues[i]) < 0.01f;
             if (active) { g.setGradientFill(accent(r)); g.fillRoundedRectangle(r, 8); }
             else {
-                g.setColour(isOver(r) ? panel2.brighter(0.06f) : panel2); g.fillRoundedRectangle(r, 8);
+                g.setColour(isOver(r) ? hover : panel2); g.fillRoundedRectangle(r, 8);
                 g.setColour(isOver(r) ? acc.withAlpha(0.7f) : line); g.drawRoundedRectangle(r.reduced(0.5f), 8, 1);
             }
-            g.setColour(active ? ink : fg); g.setFont(font(14.0f, true));
+            g.setColour(active ? ink : fg); g.setFont(semi(14.0f));
             g.drawText(juce::String(juce::roundToInt(scaleValues[i] * 100)) + "%", r, juce::Justification::centred);
         }
         g.setColour(mute); g.setFont(font(12.0f));
@@ -560,12 +448,12 @@ void SettingsPanel::paint(juce::Graphics& g) {
     section(juce::String::fromUTF8("LICENÇA"), 582);
     {
         const auto row = licenseRow();
-        g.setColour(isOver(row) ? panel2.brighter(0.06f) : panel2);
+        g.setColour(isOver(row) ? hover : panel2);
         g.fillRoundedRectangle(row, 10);
-        g.setColour(fg); g.setFont(font(13.5f, true));
+        g.setColour(fg); g.setFont(semi(13.5f));
         const auto mail = licenseEmail ? licenseEmail() : juce::String();
         g.drawFittedText(mail.isNotEmpty() ? mail : juce::String::fromUTF8("Não ativada"), row.withTrimmedLeft(12).withTrimmedRight(80).toNearestInt(), juce::Justification::centredLeft, 1, 0.8f);
-        g.setColour(isOver(row) ? acc : mute); g.setFont(font(12.5f, true));
+        g.setColour(isOver(row) ? acc : mute); g.setFont(semi(12.5f));
         g.drawText("Trocar", row.withTrimmedRight(14), juce::Justification::centredRight);
     }
     divider(656);
@@ -573,10 +461,10 @@ void SettingsPanel::paint(juce::Graphics& g) {
     section(juce::String::fromUTF8("ATUALIZAÇÃO"), 664);
     {
         const auto row = updateRow();
-        g.setColour(isOver(row) ? panel2.brighter(0.06f) : panel2);
+        g.setColour(isOver(row) ? hover : panel2);
         g.fillRoundedRectangle(row, 10);
         const bool avail = update.state == UpdateStatus::available;
-        g.setColour(fg); g.setFont(font(14.5f, true));
+        g.setColour(fg); g.setFont(semi(14.0f));
         g.drawText(avail ? juce::String::fromUTF8("Baixar atualização") : juce::String::fromUTF8("Verificar atualização"), row.withTrimmedLeft(12), juce::Justification::centredLeft);
         juce::String note;
         switch (update.state) {
@@ -586,7 +474,7 @@ void SettingsPanel::paint(juce::Graphics& g) {
             case UpdateStatus::failed:    note = juce::String::fromUTF8("sem conexão"); break;
             case UpdateStatus::idle:      break;
         }
-        g.setColour(avail ? juce::Colour(0xffffc83d) : mute);
+        g.setColour(avail ? warn : mute);
         g.setFont(font(12.5f));
         g.drawText(note, row.withTrimmedRight(14), juce::Justification::centredRight);
     }
@@ -619,29 +507,33 @@ void SettingsPanel::mouseUp(const juce::MouseEvent& e) {
 
 LicensePanel::LicensePanel(Mode m, juce::String currentEmail) : mode(m), email(std::move(currentEmail)) {
     using namespace Theme;
-    field.setFont(font(15.5f));
+    field.setFont(font(15.0f));
     field.setTextToShowWhenEmpty("seuemail@gmail.com", quiet.brighter(0.3f));
-    field.setIndents(14, 13);
+    field.setIndents(40, 12);
     field.setJustification(juce::Justification::centredLeft);
-    field.setColour(juce::TextEditor::backgroundColourId, bg);
+    field.setColour(juce::TextEditor::backgroundColourId, juce::Colours::transparentBlack);   // the rounded box is painted by the panel
     field.setColour(juce::TextEditor::textColourId, fg);
     field.setColour(juce::TextEditor::highlightColourId, acc.withAlpha(0.35f));
     field.setColour(juce::TextEditor::highlightedTextColourId, fg);
     field.setColour(juce::CaretComponent::caretColourId, acc);
-    field.setColour(juce::TextEditor::outlineColourId, line);
-    field.setColour(juce::TextEditor::focusedOutlineColourId, acc);
+    field.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+    field.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
     field.setInputRestrictions(254);
     if (mode == Mode::revoked) field.setText(email, false);
     field.onReturnKey = [this] { submit(); };
-    field.onTextChange = [this] { if (failed) { failed = false; message.clear(); repaint(); } };
+    field.onTextChange = [this] { if (failed) { failed = false; message.clear(); } repaint(); };
     addAndMakeVisible(field);
     addAndMakeVisible(activate);
     addChildComponent(cancel);
     cancel.setVisible(mode == Mode::change);
+    closeBtn.ghost = true;
+    addChildComponent(closeBtn);
+    closeBtn.setVisible(mode == Mode::change);
+    closeBtn.onClick = [this] { if (onCancel) onCancel(); };
     for (auto* b : { &activate, &cancel }) b->setMouseCursor(juce::MouseCursor::PointingHandCursor);
     activate.onClick = [this] { submit(); };
     cancel.onClick = [this] { if (onCancel) onCancel(); };
-    setSize(380, 330);
+    setSize(400, 316);
 }
 
 void LicensePanel::visibilityChanged() {
@@ -672,50 +564,59 @@ void LicensePanel::finish(bool ok, const juce::String& text) {
     repaint();
 }
 
+// Audio Makers UI dialog: 24 px padding, key badge, one field, the two buttons the same size with ATIVAR on the right.
 void LicensePanel::resized() {
-    field.setBounds(22, 166, getWidth() - 44, 46);
-    auto row = juce::Rectangle<int>(22, getHeight() - 66, getWidth() - 44, 44);
-    if (cancel.isVisible()) { cancel.setBounds(row.removeFromLeft(130)); row.removeFromLeft(10); }
-    activate.setBounds(row);
+    field.setBounds(24, 164, getWidth() - 48, AMUI::Size::field);
+    closeBtn.setBounds(getWidth() - 44, 16, 28, 28);
+    auto row = juce::Rectangle<int>(24, getHeight() - 24 - AMUI::Size::button, getWidth() - 48, AMUI::Size::button);
+    activate.setBounds(row.removeFromRight(cancel.isVisible() ? 128 : 160));
+    if (cancel.isVisible()) { row.removeFromRight(10); cancel.setBounds(row.removeFromRight(128)); }
 }
 
 void LicensePanel::paint(juce::Graphics& g) {
     using namespace Theme;
     auto all = getLocalBounds().toFloat();
-    g.setGradientFill(juce::ColourGradient(panel2, 0, 0, panel, 0, all.getHeight(), false));
-    g.fillRoundedRectangle(all, 16);
-    g.setGradientFill(juce::ColourGradient(acc.withAlpha(0.10f), all.getCentreX(), 0, acc.withAlpha(0.0f), all.getCentreX(), 90, false));
-    g.fillRoundedRectangle(all, 16);
+    g.setColour(panel);
+    g.fillRoundedRectangle(all, AMUI::Size::radiusWindow);
+    g.setGradientFill(juce::ColourGradient(acc.withAlpha(0.10f), 0, 0, acc.withAlpha(0.0f), 0, 96, false));
+    g.fillRoundedRectangle(all, AMUI::Size::radiusWindow);
     g.setColour(line);
-    g.drawRoundedRectangle(all.reduced(0.5f), 16, 1);
+    g.drawRoundedRectangle(all.reduced(0.5f), AMUI::Size::radiusWindow, 1);
 
-    auto mark = juce::Rectangle<float>(22, 22, 40, 40);
-    g.setGradientFill(accent(mark)); g.fillRoundedRectangle(mark, 10);
-    drawIcon(g, Icon::sparkle, mark.reduced(10), ink);
-    g.setColour(mute); g.setFont(font(11.5f, true).withExtraKerningFactor(0.15f));
-    g.drawText(juce::String::fromUTF8(mode == Mode::revoked ? "LICENÇA DESATIVADA" : "LICENÇA"), 74, 22, 220, 16, juce::Justification::centredLeft);
-    g.setColour(fg); g.setFont(font(20.0f, true));
+    auto badge = juce::Rectangle<float>(24, 24, 40, 40);
+    g.setColour(acc.withAlpha(0.12f)); g.fillRoundedRectangle(badge, 10);
+    g.setColour(acc.withAlpha(0.35f)); g.drawRoundedRectangle(badge.reduced(0.5f), 10, 1);
+    drawIcon(g, Icon::key, juce::Rectangle<float>(20, 20).withCentre(badge.getCentre()), acc);
+    g.setColour(mode == Mode::revoked ? danger : mute); g.setFont(label());
+    g.drawText(juce::String::fromUTF8(mode == Mode::revoked ? "LICENÇA DESATIVADA" : "LICENÇA"), 78, 25, 240, 16, juce::Justification::centredLeft);
+    g.setColour(fg); g.setFont(font(18.0f, true));
     g.drawText(juce::String::fromUTF8(mode == Mode::activate ? "Ative o Melody Code" : mode == Mode::revoked ? "Seu acesso foi desativado"
                                                                                                         : "Trocar e-mail da licença"),
-               74, 38, getWidth() - 96, 26, juce::Justification::centredLeft);
+               78, 41, getWidth() - 126, 24, juce::Justification::centredLeft);
 
     juce::String text;
     if (mode == Mode::activate)
-        text = juce::String::fromUTF8("Digite o e-mail usado na compra do Melody Code. A verificação acontece só nesta primeira vez; depois ele funciona mesmo sem internet.");
+        text = juce::String::fromUTF8("Digite o e-mail usado na compra do Melody Code.");
     else if (mode == Mode::revoked)
-        text = juce::String::fromUTF8("O acesso de ") + email + juce::String::fromUTF8(" não está mais ativo. Informe um e-mail com acesso ativo para continuar usando.");
+        text = juce::String::fromUTF8("O acesso de ") + email + juce::String::fromUTF8(" não está mais ativo. Informe um e-mail com acesso ativo.");
     else
         text = juce::String::fromUTF8("Informe outro e-mail com acesso ativo ao Melody Code.");
     g.setColour(mute); g.setFont(font(14.0f));
-    g.drawFittedText(text, 22, 80, getWidth() - 44, 58, juce::Justification::topLeft, 3, 1.0f);
+    g.drawFittedText(text, 24, 82, getWidth() - 48, 42, juce::Justification::topLeft, 2, 1.0f);
 
-    g.setColour(mute); g.setFont(font(11.0f, true).withExtraKerningFactor(0.15f));
-    g.drawText("E-MAIL DA COMPRA", 22, 146, 200, 16, juce::Justification::centredLeft);
-    if (message.isNotEmpty()) {
-        g.setColour(failed ? juce::Colour(0xffff6b6b) : mute);
-        g.setFont(font(13.0f));
-        g.drawFittedText(message, 22, 218, getWidth() - 44, 36, juce::Justification::topLeft, 2, 1.0f);
+    g.setColour(mute); g.setFont(label());
+    g.drawText(juce::String::fromUTF8("E-MAIL DA COMPRA"), 24, 142, 240, 16, juce::Justification::centredLeft);
+    {   // the field's box: focused from the moment the panel opens
+        const auto box = field.getBounds().toFloat();
+        g.setColour(acc.withAlpha(0.12f)); g.drawRoundedRectangle(box.expanded(2.0f), AMUI::Size::radiusControl + 2, 3.0f);
+        g.setColour(bg); g.fillRoundedRectangle(box, AMUI::Size::radiusControl);
+        g.setColour(acc.withAlpha(0.8f)); g.drawRoundedRectangle(box.reduced(0.5f), AMUI::Size::radiusControl, 1.0f);
+        drawIcon(g, Icon::mail, { box.getX() + 14, box.getCentreY() - 8, 16.0f, 16.0f }, acc);
     }
+    g.setColour(message.isNotEmpty() ? (failed ? danger : mute) : quiet.brighter(0.2f));
+    g.setFont(font(12.5f));
+    g.drawFittedText(message.isNotEmpty() ? message : juce::String::fromUTF8("Verificação só na primeira vez; depois funciona offline."),
+                     24, 214, getWidth() - 48, 30, juce::Justification::topLeft, 2, 1.0f);
 }
 
 void DragMidiButton::mouseDrag(const juce::MouseEvent& e) {
@@ -792,25 +693,47 @@ void PianoRoll::paint(juce::Graphics& g) {
     auto all = getLocalBounds().toFloat();
     juce::Path clip; clip.addRoundedRectangle(all, 14);
     g.reduceClipRegion(clip);
-    g.fillAll(juce::Colour(0xff0f121a));
+    g.fillAll(Theme::panel);
     const auto a = noteArea();
     const float rh = rowH(), sw = stepW();
     const auto scale = ccp::HarmonyEngine::scaleNotes(pat.key, pat.scale);
     auto inScale = [&](int m) { return std::find(scale.begin(), scale.end(), m % 12) != scale.end(); };
     const int bars = pat.bars(), steps = bars * mc::stepsPerBar;
 
-    // rows + keyboard
+    // rows
     for (int m = hi; m >= lo; --m) {
         const float y = a.getY() + (float) (hi - m) * rh;
-        g.setColour(inScale(m) ? juce::Colour(0xff131826) : juce::Colour(0xff0c0f16));
+        g.setColour(inScale(m) ? juce::Colour(0xff161a22) : juce::Colour(0xff0e1015));
         g.fillRect(a.getX(), y, a.getWidth(), rh);
-        g.setColour(isBlack(m) ? juce::Colour(0xff1a1f2c) : juce::Colour(0xffd7dce8));
-        g.fillRect(0.0f, y, (float) keyW - 2, rh - 1);
-        if (m % 12 == 0) {
-            g.setColour(Theme::quiet);
-            g.setFont(Theme::font(10.0f));
-            g.drawText("C" + juce::String(m / 12 - 1), juce::Rectangle<float>(0, y, (float) keyW - 6, rh), juce::Justification::centredRight);
+    }
+    // keyboard: a real piano on its side, white keys full width with black keys on top (Ed, 22/11)
+    {
+        const float kw = (float) keyW - 1.0f, bw = std::round(kw * 0.62f);
+        g.setColour(juce::Colour(0xffe6e9ef));
+        g.fillRect(0.0f, a.getY(), kw, a.getHeight());
+        for (int m = hi; m >= lo; --m) {
+            const float y = a.getY() + (float) (hi - m) * rh;
+            const int pc = m % 12;
+            g.setColour(juce::Colour(0xffb4bac6));
+            if (pc == 0 || pc == 5) g.fillRect(0.0f, y + rh - 0.5f, kw, 1.0f);           // C|B and F|E meet without a black key
+            if (isBlack(m)) g.fillRect(bw, y + rh * 0.5f - 0.5f, kw - bw, 1.0f);          // white keys split behind the black one
+            if (pc == 0) {
+                g.setColour(juce::Colour(0xff6b7280));
+                g.setFont(Theme::semi(9.5f));
+                g.drawText("C" + juce::String(m / 12 - 1), juce::Rectangle<float>(0, y, kw - 4, rh), juce::Justification::centredRight);
+            }
         }
+        for (int m = hi; m >= lo; --m) {
+            if (!isBlack(m)) continue;
+            const float y = a.getY() + (float) (hi - m) * rh;
+            auto key = juce::Rectangle<float>(0.0f, y + 0.5f, bw, rh - 1.0f);
+            g.setColour(juce::Colour(0xff111318));
+            g.fillRoundedRectangle(key.withTrimmedLeft(-3.0f), 2.0f);
+            g.setColour(juce::Colour(0xff2c313b));
+            g.fillRect(key.getX(), key.getY() + 1.0f, key.getWidth() - 3.0f, 1.0f);
+        }
+        g.setColour(Theme::line);
+        g.fillRect(kw, a.getY(), 1.0f, a.getHeight());
     }
     // chord tones per bar
     for (int st = 0; st < bars * 16; ++st) {   // chord tones follow where each chord really sounds
@@ -829,32 +752,35 @@ void PianoRoll::paint(juce::Graphics& g) {
         }
     }
     // header + sub lane backgrounds
-    g.setColour(juce::Colour(0xff0f121a));
+    g.setColour(Theme::panel);
     g.fillRect(0.0f, 0.0f, all.getWidth(), (float) headerH);
     const auto lane = juce::Rectangle<float>(a.getX(), a.getBottom(), a.getWidth(), (float) subH);
-    g.setColour(juce::Colour(0xff0a0c12));
+    g.setColour(juce::Colour(0xff0e1015));
     g.fillRect(0.0f, lane.getY(), all.getWidth(), lane.getHeight());
-    g.setColour(Theme::quiet);
-    g.setFont(Theme::font(11.0f, true));
+    g.setColour(Theme::line);
+    g.fillRect(0.0f, lane.getY(), all.getWidth(), 1.0f);
+    g.setColour(Theme::mute);
+    g.setFont(Theme::label(10.0f));
     g.drawText("GRAVE", juce::Rectangle<float>(0, lane.getY(), (float) keyW, lane.getHeight()), juce::Justification::centred);
     // chord names where each chord really starts (generated for the whole loop, not picked per bar)
     for (int b = 0; b < bars; ++b) {
         if (b > 0 && pat.progression.chords[(size_t) b].name == pat.progression.chords[(size_t) (b - 1)].name && pat.chordShift[(size_t) b] == 0) continue;
         const auto& c = pat.progression.chords[(size_t) b];
         const float x = a.getX() + (float) (b * 16 + pat.chordShift[(size_t) b]) * sw;
-        auto chip = juce::Rectangle<float>(x + 6, 7, 120, 24);
-        g.setColour(Theme::panel2);
-        g.fillRoundedRectangle(chip, 7);
-        g.setColour(Theme::acc.withAlpha(0.8f));
+        const auto deg = juce::String(roman[c.degree % 7]);
+        auto tag = juce::Rectangle<float>(x + 8, 9, juce::GlyphArrangement::getStringWidth(Theme::font(11.0f, true), deg) + 12, 20);
+        g.setColour(Theme::acc.withAlpha(0.12f));
+        g.fillRoundedRectangle(tag, AMUI::Size::radiusTag);
+        g.setColour(Theme::acc);
         g.setFont(Theme::font(11.0f, true));
-        g.drawText(juce::String(roman[c.degree % 7]), chip.removeFromLeft(30), juce::Justification::centred);
+        g.drawText(deg, tag, juce::Justification::centred);
         g.setColour(Theme::fg);
-        g.setFont(Theme::font(13.0f, true));
-        g.drawText(c.name, chip.withTrimmedRight(6), juce::Justification::centredLeft);
+        g.setFont(Theme::semi(13.0f));
+        g.drawText(c.name, juce::Rectangle<float>(tag.getRight() + 8, 7, 110, 24), juce::Justification::centredLeft);
     }
     // grid
     for (int s = 0; s <= steps; ++s) {
-        g.setColour(s % 16 == 0 ? juce::Colour(0xff3a4360) : s % 4 == 0 ? juce::Colour(0xff222838) : juce::Colour(0xff171b26));
+        g.setColour(s % 16 == 0 ? Theme::line2 : s % 4 == 0 ? juce::Colour(0xff21252e) : juce::Colour(0xff181b22));
         g.fillRect(a.getX() + (float) s * sw, s % 16 == 0 ? 0.0f : a.getY(), 1.0f, all.getHeight());
     }
     // sub (ghost)
@@ -899,7 +825,8 @@ void PianoRoll::paint(juce::Graphics& g) {
         g.fillRect(a.getX() + (float) (t / mc::step) * sw, 0.0f, 2.0f, all.getHeight());
     }
     g.setColour(Theme::line);
-    g.drawRoundedRectangle(all.reduced(0.5f), 14, 1);
+    g.fillRect(0.0f, (float) headerH - 1.0f, all.getWidth(), 1.0f);
+    g.drawRoundedRectangle(all.reduced(0.5f), AMUI::Size::radiusPanel, 1);
 }
 
 void PianoRoll::mouseDown(const juce::MouseEvent& e) {
@@ -994,13 +921,13 @@ MelodyCodeEditor::MelodyCodeEditor(MelodyCodeProcessor& p) : AudioProcessorEdito
     setLookAndFeel(&look);
     addAndMakeVisible(content);
 
-    keyBox.addItem(utf8("PADR\xc3\x83O"), 1);
+    keyBox.addItem(utf8("Padr\xc3\xa3o"), 1);
     for (int i = 0; i < 12; ++i) keyBox.addItem(noteNames[i], i + 2);
-    scaleBox.addItem(utf8("PADR\xc3\x83O"), 1);
-    for (int i = 0; i < (int) ccp::ScaleType::count; ++i) scaleBox.addItem(utf8(ccp::scaleName((ccp::ScaleType) i)), i + 2);
-    for (int i = 0; i < (int) mc::Style::count; ++i) styleBox.addItem(utf8(mc::styleName((mc::Style) i)), i + 1);
-    for (int i = 0; i < (int) mc::Vibe::count; ++i) vibeBox.addItem(utf8(mc::vibeName((mc::Vibe) i)), i + 1);
-    for (int k = 0; k < Sets::kitCount; ++k) soundBox.addItem(utf8(Sets::kit(k).name), k + 1);
+    scaleBox.addItem(utf8("Padr\xc3\xa3o"), 1);
+    for (int i = 0; i < (int) ccp::ScaleType::count; ++i) scaleBox.addItem(AMUI::displayCase(utf8(ccp::scaleName((ccp::ScaleType) i))), i + 2);
+    for (int i = 0; i < (int) mc::Style::count; ++i) styleBox.addItem(AMUI::displayCase(utf8(mc::styleName((mc::Style) i))), i + 1);
+    for (int i = 0; i < (int) mc::Vibe::count; ++i) vibeBox.addItem(AMUI::displayCase(utf8(mc::vibeName((mc::Vibe) i))), i + 1);
+    for (int k = 0; k < Sets::kitCount; ++k) soundBox.addItem(AMUI::displayCase(utf8(Sets::kit(k).name)), k + 1);
     auto onSetting = [this] {
         auto& s = proc.settings();
         s.key = keyBox.getSelectedId() - 2;      // id 1 = PADRÃO (-1)
@@ -1021,7 +948,7 @@ MelodyCodeEditor::MelodyCodeEditor(MelodyCodeProcessor& p) : AudioProcessorEdito
     content.addAndMakeVisible(soundBox);
     auto step = [this](int d) { soundBox.setSelectedId((soundBox.getSelectedId() - 1 + d + Sets::kitCount) % Sets::kitCount + 1); };
     soundPrev.onClick = [step] { step(-1); }; soundNext.onClick = [step] { step(1); };
-    for (auto* b : { &soundPrev, &soundNext }) { b->setTooltip(utf8("Timbre anterior / pr\xc3\xb3ximo")); content.addAndMakeVisible(b); }
+    for (auto* b : { &soundPrev, &soundNext }) { b->ghost = true; b->setTooltip(utf8("Timbre anterior / pr\xc3\xb3ximo")); content.addAndMakeVisible(b); }
     content.addAndMakeVisible(roll);
 
     role.onChange = [this](int i) { proc.settings().role = (mc::Role) i; refreshAfterSetting(false); };
@@ -1319,7 +1246,7 @@ void MelodyCodeEditor::resized() {
 }
 
 namespace L {
-constexpr int pad = 24, selY = 112, rollY = 172, rollH = 368, ctlY = 572, ctl2Y = 660, actY = 744;
+constexpr int pad = 24, headerH = 72, labelY = 90, selY = 108, rollY = 168, rollH = 372, ctlY = 576, ctlH = 80, ctl2Y = 668, ctl2H = 64, actY = 744;
 }
 
 void MelodyCodeEditor::layout() {
@@ -1327,26 +1254,38 @@ void MelodyCodeEditor::layout() {
     {
         const int gap = 12, w = (W - 4 * gap) / 5;
         int x = L::pad;
-        for (auto* b : { &keyBox, &scaleBox, &styleBox, &vibeBox, &soundBox }) { b->setBounds(x, L::selY, w, 44); x += w + gap; }
-        { auto r = soundBox.getBounds(); soundBox.setBounds(r.withTrimmedRight(50)); soundPrev.setBounds(r.getRight() - 48, r.getY(), 23, r.getHeight()); soundNext.setBounds(r.getRight() - 23, r.getY(), 23, r.getHeight()); }
+        for (auto* b : { &keyBox, &scaleBox, &styleBox, &vibeBox, &soundBox }) { b->setBounds(x, L::selY, w, AMUI::Size::field); x += w + gap; }
+        // timbre arrows live inside the field, left of its chevron
+        const auto r = soundBox.getBounds();
+        soundNext.setBounds(r.getRight() - 40 - 28, r.getY() + 8, 28, 28);
+        soundPrev.setBounds(r.getRight() - 40 - 58, r.getY() + 8, 28, 28);
     }
     roll.setBounds(L::pad, L::rollY, W, L::rollH);
-    gear.setBounds(Theme::width - L::pad - 40, 22, 40, 40);
+    gear.setBounds(Theme::width - L::pad - 40, 16, 40, 40);
     {
-        const int gap = 12, w5 = (W - 4 * gap) / 5, w = (W - 3 * gap) / 4;
+        const int gap = 12, w5 = (W - 4 * gap) / 5, w4 = (W - 3 * gap) / 4;
         int x = L::pad;
-        for (auto* s : { &role, &feel, &density, &range, &bars }) { s->setBounds(x + 14, L::ctlY + 32, w5 - 28, 40); x += w5 + gap; }
+        for (auto* s : { &role, &feel, &density, &range, &bars }) { s->setBounds(x + 12, L::ctlY + 32, w5 - 24, 36); x += w5 + gap; }
         x = L::pad;
-        for (auto* s : { &bpm, &melVol, &chordVol, &bassVol }) { s->setBounds(x + 14, L::ctl2Y + 36, w5 - 28 - 46, 24); x += w5 + gap; }
-        historyBtn.setBounds(x, L::ctl2Y, w5, 70);
+        for (auto* s : { &bpm, &melVol, &chordVol, &bassVol }) { s->setBounds(x + 12, L::ctl2Y + 30, w4 - 24 - 40, 24); x += w4 + gap; }
     }
-    {
-        const int gap = 10, unit = (W - 7 * gap) / 8;
-        int x = L::pad;
-        for (auto* b : std::initializer_list<juce::Button*> { &play, &vari, &newMel, &gen, &dragBtn, &dragWav, &save }) {
-            const int w = b == &gen ? unit * 2 + gap : unit;
-            b->setBounds(x, L::actY, w, 56);
-            x += w + gap;
+    {   // one action bar, same order as Chord Code; widths follow the labels, the spare room is shared out
+        std::initializer_list<ActionButton*> bar { &play, &vari, &newMel, &gen, &historyBtn, &dragBtn, &dragWav, &save };
+        const int gap = 10;
+        std::vector<int> widths;
+        int used = gap * ((int) bar.size() - 1);
+        for (auto* b : bar) {
+            const auto f = b->hero ? Theme::semi(15.0f).withExtraKerningFactor(AMUI::kerningHero) : Theme::button(13.0f);
+            int w = (int) std::ceil(juce::GlyphArrangement::getStringWidth(f, b == &play ? juce::String("PARAR") : b->getButtonText())) + AMUI::Size::icon + 8 + 32;
+            if (b->hero) w = juce::jmax(w, 190);
+            widths.push_back(w); used += w;
+        }
+        const int extra = juce::jmax(0, W - used) / (int) bar.size();
+        int x = L::pad, i = 0;
+        for (auto* b : bar) {
+            const int w = (i == (int) bar.size() - 1) ? L::pad + W - x : widths[(size_t) i] + extra;
+            b->setBounds(x, L::actY, w, AMUI::Size::buttonLarge);
+            x += w + gap; ++i;
         }
     }
 }
@@ -1355,30 +1294,22 @@ void MelodyCodeEditor::paintContent(juce::Graphics& g) {
     using namespace Theme;
     auto all = juce::Rectangle<float>(0, 0, (float) width, (float) height);
     g.fillAll(bg);
-    g.setGradientFill(juce::ColourGradient(juce::Colour(0x5520706a), 120, -60, juce::Colour(0x0020706a), 620, 300, true));
-    g.fillRect(all);
-    g.setGradientFill(juce::ColourGradient(juce::Colour(0x553a2a80), 1180, -40, juce::Colour(0x003a2a80), 760, 320, true));
+    g.setGradientFill(juce::ColourGradient(acc.withAlpha(0.10f), 80, -80, acc.withAlpha(0.0f), 640, 300, true));
     g.fillRect(all);
 
-    // header
-    auto logo = juce::Rectangle<float>((float) L::pad, 22, 40, 40);
+    // header: mark + wordmark on the left, summary pill and settings on the right
+    auto logo = juce::Rectangle<float>((float) L::pad, 18, 36, 36);
     g.setGradientFill(accent(logo));
-    g.fillRoundedRectangle(logo, 11);
-    {   // eighth note glyph
-        g.setColour(ink);
-        auto c = logo.getCentre();
-        g.fillEllipse(c.x - 8, c.y + 2, 10, 8);
-        g.fillRect(c.x + 0.5f, c.y - 11, 2.2f, 17.0f);
-        juce::Path flag; flag.startNewSubPath(c.x + 2.5f, c.y - 11); flag.quadraticTo(c.x + 10, c.y - 7, c.x + 7, c.y - 1);
-        g.strokePath(flag, juce::PathStrokeType(2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-    }
-    g.setFont(font(28.0f, true).withExtraKerningFactor(0.02f));
+    g.fillRoundedRectangle(logo, 10);
+    drawIcon(g, Icon::note, juce::Rectangle<float>(22, 22).withCentre(logo.getCentre()), ink);
+    const auto word = font(22.0f, true);
+    g.setFont(word);
     g.setColour(fg);
     const float tx = logo.getRight() + 14;
-    g.drawText("MELODY", juce::Rectangle<float>(tx, 22, 140, 40), juce::Justification::centredLeft);
-    const float mw = juce::GlyphArrangement::getStringWidth(font(28.0f, true).withExtraKerningFactor(0.02f), "MELODY ");
-    auto codeR = juce::Rectangle<float>(tx + mw, 22, 100, 40);
-    g.setGradientFill(juce::ColourGradient(acc, codeR.getX(), 0, acc2, codeR.getX() + 90, 0, false));
+    g.drawText("MELODY", juce::Rectangle<float>(tx, 18, 140, 36), juce::Justification::centredLeft);
+    const float mw = juce::GlyphArrangement::getStringWidth(word, "MELODY ");
+    auto codeR = juce::Rectangle<float>(tx + mw, 18, 100, 36);
+    g.setGradientFill(juce::ColourGradient(acc, codeR.getX(), 0, acc2, codeR.getX() + 70, 0, false));
     g.drawText("CODE", codeR, juce::Justification::centredLeft);
 
     const auto& s = proc.settings();
@@ -1389,46 +1320,48 @@ void MelodyCodeEditor::paintContent(juce::Graphics& g) {
     const juce::String info = (s.style == mc::Style::automatic ? padrao : juce::String()) + utf8(mc::styleName(shownPat.style))
                             + dot + (s.key < 0 || s.scale < 0 ? padrao : juce::String()) + juce::String(noteNames[shownPat.key]) + " " + utf8(ccp::scaleName(shownPat.scale))
                             + dot + utf8(mc::vibeName(s.vibe)) + dot + juce::String(s.bars) + " COMPASSOS" + dot + juce::String(proc.bpm) + " BPM";
-    g.setFont(font(12.0f, true).withExtraKerningFactor(0.1f));
-    const float iw = juce::GlyphArrangement::getStringWidth(g.getCurrentFont(), info) + 34;
-    auto pill = juce::Rectangle<float>((float) (width - L::pad) - 52 - iw, 26, iw, 32);
-    g.setColour(acc.withAlpha(0.5f)); g.drawRoundedRectangle(pill, 16, 1);
-    g.setColour(acc); g.drawText(info, pill, juce::Justification::centred);
+    g.setFont(button(12.0f));
+    const float iw = juce::GlyphArrangement::getStringWidth(g.getCurrentFont(), info) + 44;
+    auto pill = juce::Rectangle<float>((float) (width - L::pad) - 40 - 12 - iw, 18, iw, 36);
+    g.setColour(panel); g.fillRoundedRectangle(pill, 18);
+    g.setColour(line); g.drawRoundedRectangle(pill.reduced(0.5f), 18, 1);
+    g.setColour(acc); g.fillEllipse(pill.getX() + 16, pill.getCentreY() - 3, 6, 6);
+    g.setColour(mute); g.drawText(info, pill.withTrimmedLeft(30).withTrimmedRight(14), juce::Justification::centredLeft);
     g.setColour(line);
-    g.fillRect((float) L::pad, 80.0f, (float) (width - 2 * L::pad), 1.0f);
+    g.fillRect(0.0f, (float) L::headerH, (float) width, 1.0f);
 
-    auto label = [&](const juce::String& t, float x, float y) {
+    auto caption = [&](const juce::String& t, float x, float y) {
         g.setColour(mute);
-        g.setFont(font(11.0f, true).withExtraKerningFactor(0.2f));
-        g.drawText(t, juce::Rectangle<float>(x, y, 300, 16), juce::Justification::centredLeft);
+        g.setFont(label());
+        g.drawText(t, juce::Rectangle<float>(x, y, 300, 14), juce::Justification::centredLeft);
     };
-    label("TOM", (float) keyBox.getX(), 92); label("ESCALA", (float) scaleBox.getX(), 92); label("ESTILO", (float) styleBox.getX(), 92);
-    label("CLIMA", (float) vibeBox.getX(), 92); label("TIMBRE", (float) soundBox.getX(), 92);
+    caption("TOM", (float) keyBox.getX(), L::labelY); caption("ESCALA", (float) scaleBox.getX(), L::labelY); caption("ESTILO", (float) styleBox.getX(), L::labelY);
+    caption("CLIMA", (float) vibeBox.getX(), L::labelY); caption("TIMBRE", (float) soundBox.getX(), L::labelY);
 
-    g.setColour(mute);
+    const auto hintArea = juce::Rectangle<float>((float) L::pad, (float) (L::rollY + L::rollH + 8), 1000, 18);
+    g.setColour(hint.isNotEmpty() ? acc : quiet.brighter(0.25f));
     g.setFont(font(12.0f));
     g.drawText(hint.isNotEmpty() ? hint
                : utf8("Clique no grid pra criar nota  \xc2\xb7  arraste pra mover  \xc2\xb7  puxe a ponta pra alongar  \xc2\xb7  duplo clique ou Delete apaga  \xc2\xb7  \xe2\x86\x91\xe2\x86\x93 muda a nota"),
-               juce::Rectangle<float>((float) L::pad, (float) (L::rollY + L::rollH + 8), 900, 18), juce::Justification::centredLeft);
-    if (hint.isNotEmpty()) { g.setColour(acc); g.drawText(hint, juce::Rectangle<float>((float) L::pad, (float) (L::rollY + L::rollH + 8), 900, 18), juce::Justification::centredLeft); }
+               hintArea, juce::Justification::centredLeft);
 
     auto box = [&](juce::Rectangle<int> r, const juce::String& t, const juce::String& value) {
-        g.setColour(panel2);
-        g.fillRoundedRectangle(r.toFloat(), 12);
+        g.setColour(panel);
+        g.fillRoundedRectangle(r.toFloat(), AMUI::Size::radiusPanel);
         g.setColour(line);
-        g.drawRoundedRectangle(r.toFloat().reduced(0.5f), 12, 1);
-        label(t, (float) r.getX() + 14, (float) r.getY() + 10);
+        g.drawRoundedRectangle(r.toFloat().reduced(0.5f), AMUI::Size::radiusPanel, 1);
+        caption(t, (float) r.getX() + 12, (float) r.getY() + 12);
         if (value.isNotEmpty()) {
             g.setColour(fg);
-            g.setFont(font(13.0f, true));
-            g.drawText(value, r.withTrimmedRight(14).withTrimmedTop(32).withHeight(28).toFloat(), juce::Justification::centredRight);
+            g.setFont(semi(13.0f));
+            g.drawText(value, juce::Rectangle<int>(r.getRight() - 52, r.getY() + 30, 40, 24).toFloat(), juce::Justification::centredRight);
         }
     };
-    const int gap = 12, w = (width - 2 * L::pad - 3 * gap) / 4, w5 = (width - 2 * L::pad - 4 * gap) / 5;
+    const int gap = 12, w4 = (width - 2 * L::pad - 3 * gap) / 4, w5 = (width - 2 * L::pad - 4 * gap) / 5;
     const char* titles[] { "FUN\xc3\x87\xc3\x83O", "LEVADA", "DENSIDADE", "REGISTRO", "COMPASSOS" };
-    for (int i = 0; i < 5; ++i) box({ L::pad + i * (w5 + gap), L::ctlY, w5, 80 }, utf8(titles[i]), {});
-    box({ L::pad, L::ctl2Y, w5, 70 }, "BPM", juce::String(proc.bpm));
-    box({ L::pad + (w5 + gap), L::ctl2Y, w5, 70 }, "MELODIA", juce::String((int) std::round(proc.melodyLevel * 100)));
-    box({ L::pad + 2 * (w5 + gap), L::ctl2Y, w5, 70 }, "ACORDES", juce::String((int) std::round(proc.chordLevel * 100)));
-    box({ L::pad + 3 * (w5 + gap), L::ctl2Y, w5, 70 }, "GRAVE", juce::String((int) std::round(proc.bassLevel * 100)));
+    for (int i = 0; i < 5; ++i) box({ L::pad + i * (w5 + gap), L::ctlY, w5, L::ctlH }, utf8(titles[i]), {});
+    box({ L::pad, L::ctl2Y, w4, L::ctl2H }, "BPM", juce::String(proc.bpm));
+    box({ L::pad + (w4 + gap), L::ctl2Y, w4, L::ctl2H }, "MELODIA", juce::String((int) std::round(proc.melodyLevel * 100)));
+    box({ L::pad + 2 * (w4 + gap), L::ctl2Y, w4, L::ctl2H }, "ACORDES", juce::String((int) std::round(proc.chordLevel * 100)));
+    box({ L::pad + 3 * (w4 + gap), L::ctl2Y, w4, L::ctl2H }, "GRAVE", juce::String((int) std::round(proc.bassLevel * 100)));
 }

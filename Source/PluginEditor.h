@@ -3,12 +3,18 @@
 #include "PluginProcessor.h"
 #include "UpdateChecker.h"
 #include "License.h"
+#include "AMUI.h"
 
 namespace Theme {
 constexpr int width = 1240, height = 820;
-const juce::Colour bg { 0xff0c0e13 }, panel { 0xff141821 }, panel2 { 0xff1b2030 }, line { 0xff262d40 },
-    fg { 0xffe8ecf5 }, mute { 0xff8590a8 }, quiet { 0xff4a5470 }, acc { 0xff2ee6c5 }, acc2 { 0xff7c5cff }, ink { 0xff04201b };
+// Audio Makers UI: the same neutrals as Chord Code; only the accent is Melody's own.
+const juce::Colour bg { 0xff0b0d11 }, panel { 0xff12151b }, panel2 { 0xff181c24 }, hover { 0xff1f242e }, line { 0xff262b36 }, line2 { 0xff343a47 },
+    fg { 0xfff2f4f8 }, mute { 0xff9aa3b2 }, quiet { 0xff5f6878 }, acc { 0xff2ee6c5 }, acc2 { 0xff7c5cff }, ink { 0xff04201b },
+    danger { 0xffff6b6b }, warn { 0xffffc83d };
 juce::Font font(float h, bool bold = false);
+juce::Font semi(float h);                  // SemiBold: control values and buttons
+juce::Font label(float h = 11.0f);         // upper-case overline label
+juce::Font button(float h = 13.0f);        // upper-case button text
 juce::ColourGradient accent(juce::Rectangle<float>);
 }
 
@@ -38,15 +44,15 @@ private:
     int selected {};
 };
 
-enum class Icon { none, play, stop, variation, random, sparkle, sub, midi, wave, save, history, gear };
-void drawIcon(juce::Graphics&, Icon, juce::Rectangle<float>, juce::Colour);
+using Icon = AMUI::Icon;
+using AMUI::drawIcon;
 
 class ActionButton : public juce::Button {
 public:
-    ActionButton(juce::String text, Icon i = Icon::none, bool accent = false) : Button(text), icon(i), isAccent(accent) {}
+    ActionButton(juce::String text, Icon i = Icon::none, bool accent = false, bool heroButton = false) : Button(text), icon(i), isAccent(accent), hero(heroButton) {}
     void paintButton(juce::Graphics&, bool over, bool down) override;
     Icon icon;
-    bool isAccent;
+    bool isAccent, hero;
     bool lit {};
 };
 
@@ -56,7 +62,8 @@ public:
     explicit IconButton(Icon i) : Button("icon"), icon(i) { setMouseCursor(juce::MouseCursor::PointingHandCursor); }
     void paintButton(juce::Graphics&, bool over, bool down) override;
     Icon icon;
-    bool dot {};   // yellow dot: an update is available
+    bool dot {};     // yellow dot: an update is available
+    bool ghost {};   // no box, small icon (the timbre arrows inside their field)
 };
 
 // What the update check found; owned by the editor, shown in the settings panel.
@@ -106,6 +113,7 @@ private:
     bool busy {}, failed {};
     juce::TextEditor field;
     ActionButton activate { "ATIVAR", Icon::none, true }, cancel { "CANCELAR" };
+    IconButton closeBtn { Icon::close };
 };
 
 class SettingsPanel : public juce::Component, private juce::Timer {
@@ -220,16 +228,16 @@ private:
     MelodyLook look;
     Content content { *this };
     juce::ComboBox keyBox, scaleBox, styleBox, vibeBox, soundBox;
-    juce::TextButton soundPrev { juce::String::fromUTF8("\xe2\x97\x80") }, soundNext { juce::String::fromUTF8("\xe2\x96\xb6") };   // step through the sets
+    IconButton soundPrev { Icon::left }, soundNext { Icon::right };   // step through the sets, inside the TIMBRE field
     PianoRoll roll { proc };
     Segmented role { "L\xc3\x8d" "DER", "REFR\xc3\x83O", "RESPOSTA" }, feel { "RETO", "SWING", "TERCINA" }, density { "BAIXA", "M\xc3\x89" "DIA", "ALTA" },
         range { "GRAVE", "M\xc3\x89" "DIO", "AGUDO" }, bars { "2", "4", "8" };
     juce::TooltipWindow tooltips { this, 650 };
     juce::Slider bpm, bassVol, melVol, chordVol;
     ActionButton play { "OUVIR", Icon::play }, vari { juce::String::fromUTF8("VARIAÇÃO"), Icon::variation },
-        newMel { "NOVA MELODIA", Icon::random }, gen { "GERAR", Icon::none, true },
-        historyBtn { juce::String::fromUTF8("HISTÓRICO"), Icon::history }, save { "SALVAR MIDI", Icon::save };
-    DragMidiButton dragBtn { "ARRASTAR MIDI", Icon::midi }, dragWav { "ARRASTAR WAV", Icon::wave };
+        newMel { "NOVA MELODIA", Icon::newMelody }, gen { "GERAR", Icon::sparkle, true, true },
+        historyBtn { juce::String::fromUTF8("HISTÓRICO"), Icon::history }, save { "SALVAR", Icon::save };
+    DragMidiButton dragBtn { "MIDI", Icon::midi }, dragWav { "WAV", Icon::wav };
     IconButton gear { Icon::gear };
     ModalOverlay overlay;
     void openSettings();

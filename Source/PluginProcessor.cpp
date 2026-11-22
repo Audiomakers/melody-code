@@ -95,7 +95,7 @@ void MelodyCodeProcessor::prepareToPlay(double rate, int) {
 mc::Pattern MelodyCodeProcessor::pattern() const { return shown; }
 
 
-void MelodyCodeProcessor::publish(mc::Pattern p, bool addHistory) {
+void MelodyCodeProcessor::publish(mc::Pattern p, bool addHistory, bool restart) {
     current = p.settings;
     soundVibe = (int) p.settings.vibe;
     shown = p;
@@ -110,6 +110,8 @@ void MelodyCodeProcessor::publish(mc::Pattern p, bool addHistory) {
         audioCenters = centers;
     }
     edited = false;
+    // a new pattern starts from the top when the preview is running (Ed, 22/11); manual note edits keep the position
+    if (restart && playing.load()) resetPosition = true;
     if (addHistory) {
         history.insert(history.begin(), shown);
         if (history.size() > 30) history.pop_back();
@@ -131,7 +133,7 @@ void MelodyCodeProcessor::setMelody(std::vector<mc::Note> notes) {
     std::sort(notes.begin(), notes.end(), [](const mc::Note& a, const mc::Note& b) { return a.start < b.start; });
     auto p = shown;
     p.melody = std::move(notes);
-    publish(std::move(p), false);
+    publish(std::move(p), false, false);
     edited = true;
 }
 

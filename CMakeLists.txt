@@ -53,7 +53,7 @@ if(TARGET juce::juce_audio_utils)
   Source/PluginEditor.cpp Source/PluginEditor.h
   Source/Synth.cpp Source/Synth.h Source/Tone.cpp Source/Tone.h
   Source/Sets.cpp Source/Sets.h Source/License.cpp Source/License.h Source/UpdateChecker.cpp Source/UpdateChecker.h
-  Source/EmbeddedFonts.cpp Source/EmbeddedFonts.h)
+  Source/EmbeddedFonts.cpp Source/EmbeddedFonts.h Source/AMUI.cpp Source/AMUI.h)
  file(GLOB MC_PIANO CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Piano/*.ogg")
 juce_add_binary_data(melodycode_piano SOURCES ${MC_PIANO})
 set_target_properties(melodycode_piano PROPERTIES POSITION_INDEPENDENT_CODE ON)
