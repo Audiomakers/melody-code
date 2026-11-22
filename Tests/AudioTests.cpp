@@ -194,6 +194,29 @@ int main() {
         }
         return 0;
     }
+    // MC_PATCH_DIR=<folder>: every sound on its own (M/C/B numbers of the audition list)
+    if (const char* dir = std::getenv("MC_PATCH_DIR")) {
+        const std::vector<const char*> lists[3] {
+            { "piano","rhodes_lead","fm_ep_lead","flute_soft","music_box","bleep","marimba","saw_lead","dark_lead","synth_brass",
+              "bell_glass","kalimba","vibraphone","celesta","trap_bell","acid","square_lead","whistle","pan_flute","ocarina",
+              "vocal_ah","fb_lead","sine_lead","steel_drum","koto","guitar_pluck","brass_stab","house_pluck","piano_lofi","chip_arp" },
+            { "sub_round","sub_warm","bass808","bass808_heavy","deep_bass","reese","pluck_bass","rolling","bass808_glide","bass808_short",
+              "reese_dirty","reese_soft","moog_bass","acid_bass","fm_bass","wobble","tech_bass","garage_bass","finger_bass","slap_bass",
+              "upright_bass","synth80_bass","square_bass","saw_sub_bass","funk_tum","hoover_bass","fb_bass","lofi_sub","trance_bass","donk" },
+            { "piano_chords","rhodes","fm_ep","soft_pluck","saw_stab","organ","string_pad","glass_pad","trance_chords","warm_pad",
+              "dark_pad","deep_stab","wurli","clav","church_organ","shimmer_pad","wide_pad","fb_chords","house_pluck_chords","piano_lofi_chords",
+              "clean_guitar","nylon","choir_ooh","juno_pad","m1_organ","pizzicato","harp","dark_choir","brass_pad","rave_stab" } };
+        const char* tag[] { "M", "B", "C" };
+        p.kit = 0; p.settings().style = mc::Style::pop; p.settings().bars = 4; p.bpm = 100;
+        p.setVibe(mc::Vibe::clean); p.generateAll();
+        for (int l = 0; l < 3; ++l)
+            for (size_t i = 0; i < lists[l].size(); ++i) {
+                Sets::audition(l, lists[l][i]);
+                p.renderWav(juce::File(dir).getChildFile(juce::String(tag[l]) + juce::String((int) i + 1) + " " + lists[l][i] + ".wav"), false, l);
+                Sets::audition(l, nullptr);
+            }
+        return 0;
+    }
     // MC_DEMO_DIR=<folder>: one full-mix WAV per sound set, in a style that suits it, plus its three stems
     if (const char* dir = std::getenv("MC_DEMO_DIR")) {
         const mc::Style styles[] { mc::Style::pop, mc::Style::rnb, mc::Style::mpb, mc::Style::lofi, mc::Style::lofi, mc::Style::reggaeton,

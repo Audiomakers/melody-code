@@ -17,6 +17,7 @@ public:
     };
     static constexpr int kitCount = 10;
     static const Kit& kit(int);
+    static void audition(int layer, const char* patchName);   // tests only: play this patch on a layer (nullptr = the set's)
 
     void prepare(double sampleRate);
     void setKit(int k) { kitIndex = k < 0 || k >= kitCount ? 0 : k; }
