@@ -14,10 +14,11 @@ public:
         const char* melody; const char* chords; const char* bass;   // patch names (Sets.cpp)
         bool sustainChords { false };   // pad-like chord sounds: one held chord per change instead of the style's rhythm
         bool rootChords { false };      // stabs that already sound like a chord: play only each chord's root
+        int vibe { -1 };                // effect the set switches to when picked (-1 = keep the user's)
     };
-    static constexpr int kitCount = 10;
+    static constexpr int kitCount = 14;
     static const Kit& kit(int);
-    static void audition(int layer, const char* patchName);   // tests only: play this patch on a layer (nullptr = the set's)
+    static void audition(int layer, const char* patchName, float gainDb = 0.0f);   // tests only: play this patch on a layer (nullptr = the set's)
 
     void prepare(double sampleRate);
     void setKit(int k) { kitIndex = k < 0 || k >= kitCount ? 0 : k; }

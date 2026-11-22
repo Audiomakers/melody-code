@@ -200,34 +200,42 @@ const P& patch(const char* name) {
 
 // Names and descriptions are UTF-8 (shown in Portuguese).
 const Sets::Kit kits[Sets::kitCount] {
-    { "PIANO",       "Piano ac\xc3\xbastico de verdade (gravado) na melodia e nos acordes, sub quente",        "piano",       "piano_chords",  "sub_warm" },
-    { "RHODES",      "Rhodes na melodia e nos acordes, com tremolo, sub quente",                                   "rhodes_lead", "rhodes",        "sub_warm" },
-    { "PIANO EL\xc3\x89TRICO", "Piano el\xc3\xa9trico FM (estilo anos 80) na melodia e nos acordes, sub redondo", "fm_ep_lead", "fm_ep",     "sub_round" },
-    { "VELUDO",      "Flauta suave na melodia, Rhodes nos acordes, sub quente",                                   "flute_soft",  "rhodes",        "sub_warm" },
-    { "NINAR",       "Caixinha de m\xc3\xbasica na melodia, pluck de corda nos acordes, sub quente",             "music_box",   "soft_pluck",    "sub_warm" },
-    { "PIXEL",       "Bleep de videogame na melodia, stabs de serra nos acordes, 808",                            "bleep",       "saw_stab",      "bass808" },
-    { "CLUBE",       "Marimba na melodia, \xc3\xb3rg\xc3\xa3o de house nos acordes, baixo pluck",               "marimba",     "organ",         "pluck_bass" },
-    { "NEON",        "Lead de supersaw na melodia, acordes de trance, sub redondo",                                "saw_lead",    "trance_chords", "sub_round" },
-    { "NOTURNO",     "Lead escuro na melodia, pad de vidro segurando os acordes, baixo reese",                    "dark_lead",   "glass_pad",     "reese", true },
-    { "\xc3\x89PICO", "Metais de synth na melodia, cordas de synth segurando os acordes, sub quente",           "synth_brass", "string_pad",    "sub_warm", true },
+    { "PIANO", "Piano ac\xc3\xba" "stico de verdade na melodia e nos acordes, sub redondo", "piano", "piano_chords", "sub_round", false, false, -1 },
+    { "RHODES", "Rhodes na melodia e nos acordes, baixo deep", "rhodes_lead", "rhodes", "deep_bass", false, false, -1 },
+    { "LO-FI", "Piano lo-fi abafado na melodia e nos acordes, sub lo-fi", "piano_lofi", "piano_lofi_chords", "lofi_sub", false, false, -1 },
+    { "EL\xc3\x89" "TRICO", "Rhodes na melodia, Wurlitzer nos acordes, baixo Moog", "rhodes_lead", "wurli", "moog_bass", false, false, -1 },
+    { "GROOVE", "Flauta na melodia, Wurlitzer nos acordes, baixo Moog", "flute_soft", "wurli", "moog_bass", false, false, -1 },
+    { "DARK TRAP", "Piano na melodia, pad escuro nos acordes, 808 com glide", "piano", "dark_pad", "bass808_glide", false, false, 4 },
+    { "DRILL", "Sine lead com glide na melodia, cordas nos acordes, reese sujo", "sine_lead", "string_pad", "reese_dirty", false, false, -1 },
+    { "HOUSE", "Sine lead na melodia, pad Juno nos acordes, baixo saw + sub", "sine_lead", "juno_pad", "saw_sub_bass", false, false, 4 },
+    { "DEEP", "Piano lo-fi na melodia, stab de deep house nos acordes, sub redondo", "piano_lofi", "deep_stab", "sub_round", false, false, 1 },
+    { "CRISTAL", "Piano na melodia, pad quente nos acordes, sub lo-fi", "piano", "warm_pad", "lofi_sub", false, false, 4 },
+    { "ACID", "Square lead na melodia, \xc3\xb3" "rg\xc3\xa3" "o M1 nos acordes, baixo acid 303", "square_lead", "m1_organ", "acid_bass", false, false, -1 },
+    { "8-BIT", "Arpejo 8-bit na melodia, saw stab nos acordes, baixo future bass", "chip_arp", "saw_stab", "fb_bass", false, false, -1 },
+    { "VELUDO", "Flauta suave na melodia, pad quente nos acordes, sub redondo", "flute_soft", "warm_pad", "sub_round", false, false, -1 },
+    { "SYNTHWAVE", "Assobio na melodia, pad Juno nos acordes, baixo synth anos 80", "whistle", "juno_pad", "synth80_bass", false, false, -1 },
 };
 
 // per set and layer (melody, bass, chords): dB, measured so every set exports at a similar loudness with
 // chords a few dB under the melody and the bass level with it
 const float kitGainsDb[Sets::kitCount][3] {
-    { 3.1f, 4.7f, 0.5f },
-    { 5.0f, 4.2f, 1.5f },
-    { 6.4f, 2.2f, 0.7f },
-    { 2.1f, 4.3f, 2.0f },
-    { 8.1f, 5.1f, 11.8f },
-    { 11.3f, 5.4f, 14.1f },
-    { 9.9f, 11.4f, 4.1f },
-    { 5.0f, 5.6f, 5.4f },
-    { 6.6f, 12.4f, -2.5f },
-    { 2.9f, 4.3f, 1.4f },
+    { 3.1f, 2.0f, -1.6f },
+    { 4.7f, 8.6f, 0.9f },
+    { 2.8f, 4.8f, -1.1f },
+    { 4.7f, 6.6f, 1.6f },
+    { 2.1f, 6.6f, 1.6f },
+    { 3.1f, 6.0f, -2.0f },
+    { 0.4f, 4.6f, 0.5f },
+    { 0.4f, 6.6f, -1.4f },
+    { 2.8f, 2.0f, 10.4f },
+    { 3.1f, 4.8f, 0.6f },
+    { 4.0f, 2.0f, 9.6f },
+    { 8.4f, 9.4f, 16.7f },
+    { 2.1f, 2.0f, 0.6f },
+    { 1.4f, 11.9f, -1.4f },
 };
 
-const P* auditionPatch[3] {};   // test-only: forces a patch on a layer
+const P* auditionPatch[3] {}; float auditionDb[3] {};   // test-only: forces a patch on a layer
 struct KitPatches { const P* melody; const P* chords; const P* bass; };
 const KitPatches& kitPatches(int k) {
     static const auto all = [] {
@@ -265,7 +273,7 @@ float basic(Osc o, double ph, double dt) {
 }
 }
 
-void Sets::audition(int layer, const char* name) { if (layer >= 0 && layer < 3) auditionPatch[layer] = name ? &patch(name) : nullptr; }
+void Sets::audition(int layer, const char* name, float db) { if (layer >= 0 && layer < 3) auditionDb[layer] = db; if (layer >= 0 && layer < 3) auditionPatch[layer] = name ? &patch(name) : nullptr; }
 
 const Sets::Kit& Sets::kit(int k) { return kits[k < 0 || k >= kitCount ? 0 : k]; }
 
@@ -325,7 +333,7 @@ void Sets::start(Voice& v, const Patch& p, int pitch, float vel, int length, int
     v.freq = v.freqTarget = hz(pitch); v.glideK = 1.0;
     const float layerLevel = layer == 1 ? bassLevel : layer == 2 ? chordLevel : melodyLevel;
     v.gain = p.level * (0.3f + 0.7f * std::pow(vel, 1.3f)) * layerLevel * 0.3f
-           * (auditionPatch[layer] ? 1.0f : juce::Decibels::decibelsToGain(kitGainsDb[kitIndex][layer]));
+           * (auditionPatch[layer] ? juce::Decibels::decibelsToGain(auditionDb[layer]) : juce::Decibels::decibelsToGain(kitGainsDb[kitIndex][layer]));
     v.env = 0.0f; v.kill = 0.0f;
     v.atkK = 1.0f / juce::jmax(1.0f, p.attack * (float) sr);
     v.decK = coef(p.decay, sr);

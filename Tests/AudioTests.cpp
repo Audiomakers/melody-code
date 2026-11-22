@@ -194,6 +194,21 @@ int main() {
         }
         return 0;
     }
+    // MC_SETS_FILE=<txt> MC_SETS_DIR=<folder>: lines "NAME style bpm melody chords bass dbM dbC dbB" rendered as full mixes
+    if (const char* sf = std::getenv("MC_SETS_FILE")) {
+        juce::StringArray lines; juce::File(sf).readLines(lines);
+        for (auto& line : lines) {
+            auto t = juce::StringArray::fromTokens(line, " ", ""); if (t.size() < 9) continue;
+            p.kit = 0; p.settings().style = (mc::Style) t[1].getIntValue(); p.settings().bars = 8; p.bpm = t[2].getIntValue();
+            p.setVibe(t.size() > 9 ? (mc::Vibe) t[9].getIntValue() : mc::Vibe::clean); p.generateAll();
+            Sets::audition(0, t[3].toRawUTF8(), t[6].getFloatValue());
+            Sets::audition(2, t[4].toRawUTF8(), t[7].getFloatValue());
+            Sets::audition(1, t[5].toRawUTF8(), t[8].getFloatValue());
+            p.renderWav(juce::File(std::getenv("MC_SETS_DIR")).getChildFile(t[0] + ".wav"), true);
+        }
+        for (int l = 0; l < 3; ++l) Sets::audition(l, nullptr);
+        return 0;
+    }
     // MC_PATCH_DIR=<folder>: every sound on its own (M/C/B numbers of the audition list)
     if (const char* dir = std::getenv("MC_PATCH_DIR")) {
         const std::vector<const char*> lists[3] {
@@ -219,14 +234,14 @@ int main() {
     }
     // MC_DEMO_DIR=<folder>: one full-mix WAV per sound set, in a style that suits it, plus its three stems
     if (const char* dir = std::getenv("MC_DEMO_DIR")) {
-        const mc::Style styles[] { mc::Style::pop, mc::Style::rnb, mc::Style::mpb, mc::Style::lofi, mc::Style::lofi, mc::Style::reggaeton,
-                                   mc::Style::techHouse, mc::Style::trance, mc::Style::melodicTechno, mc::Style::orchestral };
-        const int tempos[] { 96, 86, 92, 80, 80, 95, 126, 138, 124, 76 };
+        const mc::Style styles[] { mc::Style::pop, mc::Style::rnb, mc::Style::lofi, mc::Style::mpb, mc::Style::afrobeats, mc::Style::trap, mc::Style::drill,
+                                   mc::Style::house, mc::Style::deepHouse, mc::Style::melodicTechno, mc::Style::techHouse, mc::Style::futureBass, mc::Style::mpb, mc::Style::pop };
+        const int tempos[] { 92, 86, 80, 92, 105, 140, 142, 124, 122, 124, 126, 150, 80, 100 };
         static_assert(std::size(styles) == Sets::kitCount && std::size(tempos) == Sets::kitCount);
         const char* stems[] { "melodia", "grave", "acordes" };
         for (int k = 0; k < Sets::kitCount; ++k) {
             p.kit = k; p.settings().style = styles[k]; p.settings().bars = 8; p.bpm = tempos[k];
-            p.setVibe(mc::Vibe::clean); p.generateAll();
+            p.setVibe(Sets::kit(k).vibe >= 0 ? (mc::Vibe) Sets::kit(k).vibe : mc::Vibe::clean); p.generateAll();
             if (std::getenv("MC_DEMO_VERBOSE")) {
                 const auto pt = p.pattern();
                 auto med = [](std::vector<mc::Note> v) { std::sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.pitch < b.pitch; }); return v.empty() ? 0 : v[v.size() / 2].pitch; };

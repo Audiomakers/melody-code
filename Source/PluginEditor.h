@@ -220,6 +220,7 @@ private:
     MelodyLook look;
     Content content { *this };
     juce::ComboBox keyBox, scaleBox, styleBox, vibeBox, soundBox;
+    juce::TextButton soundPrev { juce::String::fromUTF8("\xe2\x97\x80") }, soundNext { juce::String::fromUTF8("\xe2\x96\xb6") };   // step through the sets
     PianoRoll roll { proc };
     Segmented role { "L\xc3\x8d" "DER", "REFR\xc3\x83O", "RESPOSTA" }, feel { "RETO", "SWING", "TERCINA" }, density { "BAIXA", "M\xc3\x89" "DIA", "ALTA" },
         range { "GRAVE", "M\xc3\x89" "DIO", "AGUDO" }, bars { "2", "4", "8" };
