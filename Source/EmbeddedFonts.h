@@ -4,4 +4,6 @@ extern unsigned char interRegular[];
 extern unsigned int interRegularSize;
 extern unsigned char interBold[];
 extern unsigned int interBoldSize;
+extern unsigned char interSemiBold[];
+extern unsigned int interSemiBoldSize;
 }
