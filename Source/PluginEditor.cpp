@@ -1013,8 +1013,15 @@ MelodyCodeEditor::MelodyCodeEditor(MelodyCodeProcessor& p) : AudioProcessorEdito
     vibeBox.onChange = [this] { proc.setVibe((mc::Vibe) (vibeBox.getSelectedId() - 1)); };
     content.addAndMakeVisible(vibeBox);
     // changing the sound only changes the preview instrument: the notes, history and MIDI stay as they are
-    soundBox.onChange = [this] { proc.kit = soundBox.getSelectedId() - 1; soundBox.setTooltip(utf8(Sets::kit(proc.kit).description)); };
+    soundBox.onChange = [this] {
+        proc.kit = soundBox.getSelectedId() - 1;
+        soundBox.setTooltip(utf8(Sets::kit(proc.kit).description));
+        if (const int v = Sets::kit(proc.kit).vibe; v >= 0) vibeBox.setSelectedId(v + 1);   // sets that sound best with an effect bring it along
+    };
     content.addAndMakeVisible(soundBox);
+    auto step = [this](int d) { soundBox.setSelectedId((soundBox.getSelectedId() - 1 + d + Sets::kitCount) % Sets::kitCount + 1); };
+    soundPrev.onClick = [step] { step(-1); }; soundNext.onClick = [step] { step(1); };
+    for (auto* b : { &soundPrev, &soundNext }) { b->setTooltip(utf8("Timbre anterior / pr\xc3\xb3ximo")); content.addAndMakeVisible(b); }
     content.addAndMakeVisible(roll);
 
     role.onChange = [this](int i) { proc.settings().role = (mc::Role) i; refreshAfterSetting(false); };
@@ -1321,6 +1328,7 @@ void MelodyCodeEditor::layout() {
         const int gap = 12, w = (W - 4 * gap) / 5;
         int x = L::pad;
         for (auto* b : { &keyBox, &scaleBox, &styleBox, &vibeBox, &soundBox }) { b->setBounds(x, L::selY, w, 44); x += w + gap; }
+        { auto r = soundBox.getBounds(); soundBox.setBounds(r.withTrimmedRight(50)); soundPrev.setBounds(r.getRight() - 48, r.getY(), 23, r.getHeight()); soundNext.setBounds(r.getRight() - 23, r.getY(), 23, r.getHeight()); }
     }
     roll.setBounds(L::pad, L::rollY, W, L::rollH);
     gear.setBounds(Theme::width - L::pad - 40, 22, 40, 40);

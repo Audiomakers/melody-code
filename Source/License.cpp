@@ -2,7 +2,10 @@
 #include <array>
 
 namespace {
-constexpr auto endpoint = "https://download.chordcode.audiomakers.club/api/license/check";
+// Audio Makers license server (one D1 table of email + product, shared by every plugin; see licencas worker)
+constexpr auto endpoint = "https://licencas.audiomakers.club/api/license/check";
+// Accounts that work before the server is set up (Ed's own). Remove once the licencas worker is live.
+constexpr const char* builtInEmails[] { "ed@audiomakers.club" };
 constexpr int maximumResponseBytes = 16 * 1024;
 const auto revalidateInterval = juce::RelativeTime::minutes(10);
 
@@ -37,6 +40,9 @@ public:
         Outcome outcome { Outcome::Kind::unavailable,
                           utf("Não foi possível falar com o servidor. Confira sua conexão e tente novamente.") };
 
+        for (auto* e : builtInEmails)
+            if (email.trim().equalsIgnoreCase(e)) { outcome = { Outcome::Kind::authorized, utf("Licença ativada.") }; return finish(outcome); }
+
         auto body = std::make_unique<juce::DynamicObject>();
         body->setProperty("email", email);
         body->setProperty("product", "melody-code");
@@ -70,6 +76,10 @@ public:
             }
         }
 
+        return finish(outcome);
+    }
+
+    JobStatus finish(Outcome outcome) {
         if (shouldExit()) return jobHasFinished;
         juce::MessageManager::callAsync([o = owner, e = email, c = std::move(completion), outcome] {
             if (auto* manager = o.get()) {

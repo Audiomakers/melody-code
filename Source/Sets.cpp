@@ -85,6 +85,12 @@ const Partial drawbars[] { { 1.0f, 0.8f, 0 }, { 2.0f, 0.65f, 0 }, { 3.0f, 0.45f,
                            { 8.0f, 0.18f, 0 }, { 0.5f, 0.35f, 0 }, { 3.0f, 0.6f, 0.18f } };   // last: percussion click
 const Partial marimbaBar[] { { 1.0f, 1.0f, 0.9f }, { 3.93f, 0.35f, 0.12f }, { 9.2f, 0.08f, 0.04f } };
 
+const Partial kalimbaTines[] { { 1.0f, 1.0f, 1.4f }, { 5.9f, 0.18f, 0.12f }, { 3.0f, 0.06f, 0.3f } };
+const Partial vibesBar[] { { 1.0f, 1.0f, 2.5f }, { 4.0f, 0.25f, 0.6f }, { 10.0f, 0.05f, 0.15f } };
+const Partial celestaBar[] { { 1.0f, 1.0f, 1.6f }, { 2.0f, 0.3f, 0.8f }, { 4.0f, 0.2f, 0.4f }, { 7.0f, 0.06f, 0.15f } };
+const Partial churchStops[] { { 1.0f, 0.8f, 0 }, { 2.0f, 0.7f, 0 }, { 3.0f, 0.35f, 0 }, { 4.0f, 0.5f, 0 }, { 0.5f, 0.6f, 0 }, { 6.0f, 0.2f, 0 }, { 8.0f, 0.25f, 0 } };
+const Partial m1Organ[] { { 1.0f, 0.9f, 0.5f }, { 2.0f, 0.6f, 0.35f }, { 3.0f, 0.5f, 0.25f }, { 4.0f, 0.35f, 0.2f }, { 6.0f, 0.2f, 0.1f }, { 0.5f, 0.3f, 0.5f } };
+
 // ------------------------------------------------------------------ the patches
 const P patches[] {
     // melody
@@ -118,6 +124,71 @@ const P patches[] {
     { .name = "deep_bass", .center = 36, .lo = 26, .hi = 48, .osc1 = Osc::sine, .osc2 = Osc::saw, .level2 = 0.35f, .filter = Filter::lp12, .cutoff = 260.0f, .fEnv = 1.3f, .fDecay = 0.08f, .keyTrack = 0.8f, .velCut = 0.0f, .attack = 0.003f, .decay = 0.4f, .sustain = 0.55f, .release = 0.06f, .drive = 0.2f, .mono = true, .width = 0.0f, .level = 1.0f },
     { .name = "reese", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::supersaw, .unison = 3, .detune = 18.0f, .sub = 0.7f, .filter = Filter::lp24, .cutoff = 260.0f, .res = 0.2f, .fEnv = 0.6f, .fDecay = 0.3f, .fSus = 0.4f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.004f, .decay = 1.0f, .sustain = 1.0f, .release = 0.06f, .drive = 0.3f, .glideMs = 40.0f, .mono = true, .width = 0.0f, .level = 0.8f },
     { .name = "pluck_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::square, .sub = 0.6f, .filter = Filter::lp24, .cutoff = 240.0f, .res = 0.2f, .fEnv = 2.4f, .fDecay = 0.1f, .fSus = 0.1f, .keyTrack = 0.6f, .attack = 0.002f, .decay = 0.35f, .sustain = 0.3f, .release = 0.05f, .drive = 0.2f, .mono = true, .width = 0.0f, .level = 0.9f },
+    // ---- audition: more melody sounds
+    { .name = "bell_glass", .center = 76, .lo = 62, .hi = 92, .osc1 = Osc::fm, .r1 = 3.5f, .i1 = 2.4f, .r2 = 1.0f, .i2 = 0.6f, .iDecay = 1.2f, .iSus = 0.1f, .attack = 0.001f, .decay = 3.2f, .sustain = 0.0f, .release = 0.9f, .width = 0.2f, .level = 0.9f },
+    { .name = "kalimba", .center = 74, .lo = 60, .hi = 90, .osc1 = Osc::additive, .noise = 0.1f, .noiseDecay = 0.003f, .noiseTone = 3000.0f, .partials = kalimbaTines, .partialCount = 3, .attack = 0.001f, .decay = 2.0f, .sustain = 0.0f, .release = 0.25f, .width = 0.2f, .level = 1.0f },
+    { .name = "vibraphone", .center = 72, .lo = 58, .hi = 89, .osc1 = Osc::additive, .partials = vibesBar, .partialCount = 3, .attack = 0.001f, .decay = 3.0f, .sustain = 0.0f, .release = 0.5f, .tremolo = 0.35f, .tremRate = 5.5f, .width = 0.4f, .level = 1.0f },
+    { .name = "celesta", .center = 79, .lo = 65, .hi = 96, .osc1 = Osc::additive, .noise = 0.05f, .noiseDecay = 0.002f, .noiseTone = 8000.0f, .partials = celestaBar, .partialCount = 4, .attack = 0.001f, .decay = 2.0f, .sustain = 0.0f, .release = 0.4f, .width = 0.2f, .level = 0.9f },
+    { .name = "trap_bell", .center = 76, .lo = 62, .hi = 92, .osc1 = Osc::fm, .osc2 = Osc::sine, .semi2 = 12.0f, .level2 = 0.2f, .r1 = 2.0f, .i1 = 1.8f, .r2 = 5.0f, .i2 = 0.4f, .iDecay = 0.25f, .iSus = 0.05f, .attack = 0.001f, .decay = 1.1f, .sustain = 0.0f, .release = 0.3f, .width = 0.3f, .level = 0.9f },
+    { .name = "acid", .center = 60, .lo = 48, .hi = 72, .osc1 = Osc::saw, .filter = Filter::lp24, .cutoff = 280.0f, .res = 0.8f, .fEnv = 4.2f, .fDecay = 0.17f, .fSus = 0.05f, .keyTrack = 0.4f, .velCut = 1.2f, .attack = 0.002f, .decay = 0.5f, .sustain = 0.85f, .release = 0.05f, .drive = 0.5f, .glideMs = 55.0f, .mono = true, .width = 0.0f, .level = 0.75f },
+    { .name = "square_lead", .center = 72, .lo = 58, .hi = 88, .osc1 = Osc::square, .filter = Filter::lp12, .cutoff = 5000.0f, .attack = 0.002f, .decay = 0.5f, .sustain = 0.8f, .release = 0.08f, .vibrato = 10.0f, .vibDelay = 0.3f, .width = 0.0f, .level = 0.5f },
+    { .name = "whistle", .center = 79, .lo = 67, .hi = 93, .osc1 = Osc::sine, .noise = 0.04f, .noiseDecay = 5.0f, .noiseTone = 5000.0f, .attack = 0.03f, .decay = 0.5f, .sustain = 0.9f, .release = 0.1f, .glideMs = 40.0f, .mono = true, .vibrato = 20.0f, .vibRate = 5.8f, .vibDelay = 0.15f, .width = 0.0f, .level = 0.9f },
+    { .name = "pan_flute", .center = 74, .lo = 60, .hi = 88, .osc1 = Osc::tri, .noise = 0.18f, .noiseDecay = 0.08f, .noiseTone = 2500.0f, .filter = Filter::lp12, .cutoff = 2200.0f, .keyTrack = 1.0f, .velCut = 0.0f, .attack = 0.02f, .decay = 0.6f, .sustain = 0.8f, .release = 0.18f, .vibrato = 8.0f, .vibDelay = 0.35f, .width = 0.1f, .level = 1.0f },
+    { .name = "ocarina", .center = 74, .lo = 60, .hi = 88, .osc1 = Osc::sine, .osc2 = Osc::tri, .level2 = 0.15f, .noise = 0.03f, .noiseDecay = 4.0f, .noiseTone = 2000.0f, .attack = 0.04f, .decay = 0.6f, .sustain = 0.9f, .release = 0.12f, .vibrato = 12.0f, .vibRate = 5.0f, .vibDelay = 0.3f, .width = 0.0f, .level = 0.9f },
+    { .name = "vocal_ah", .center = 69, .lo = 57, .hi = 81, .osc1 = Osc::supersaw, .unison = 3, .detune = 8.0f, .filter = Filter::bp, .cutoff = 850.0f, .res = 0.55f, .keyTrack = 0.2f, .velCut = 0.0f, .attack = 0.06f, .decay = 0.6f, .sustain = 0.85f, .release = 0.2f, .vibrato = 14.0f, .vibRate = 5.2f, .vibDelay = 0.2f, .width = 0.5f, .level = 1.4f },
+    { .name = "fb_lead", .center = 74, .lo = 60, .hi = 88, .osc1 = Osc::supersaw, .unison = 5, .detune = 18.0f, .filter = Filter::lp12, .cutoff = 4500.0f, .attack = 0.004f, .decay = 0.6f, .sustain = 0.8f, .release = 0.15f, .glideMs = 35.0f, .mono = true, .width = 0.9f, .level = 0.6f },
+    { .name = "sine_lead", .center = 74, .lo = 60, .hi = 90, .osc1 = Osc::sine, .osc2 = Osc::sine, .semi2 = 12.0f, .level2 = 0.12f, .attack = 0.005f, .decay = 0.6f, .sustain = 0.85f, .release = 0.12f, .drive = 0.15f, .glideMs = 45.0f, .mono = true, .vibrato = 18.0f, .vibRate = 6.0f, .vibDelay = 0.2f, .width = 0.0f, .level = 0.9f },
+    { .name = "steel_drum", .center = 72, .lo = 58, .hi = 88, .osc1 = Osc::fm, .r1 = 2.0f, .i1 = 1.3f, .r2 = 3.0f, .i2 = 0.5f, .iDecay = 0.3f, .iSus = 0.1f, .attack = 0.001f, .decay = 1.0f, .sustain = 0.0f, .release = 0.2f, .pitchEnv = 0.6f, .pitchDecay = 0.02f, .width = 0.2f, .level = 0.9f },
+    { .name = "koto", .center = 72, .lo = 58, .hi = 88, .osc1 = Osc::pluck, .ksBright = 0.8f, .ksDecay = 1.2f, .attack = 0.001f, .decay = 6.0f, .sustain = 1.0f, .release = 0.2f, .width = 0.2f, .level = 1.1f },
+    { .name = "guitar_pluck", .center = 67, .lo = 52, .hi = 84, .osc1 = Osc::pluck, .ksBright = 0.5f, .ksDecay = 2.0f, .filter = Filter::lp12, .cutoff = 3500.0f, .keyTrack = 0.4f, .velCut = 0.4f, .attack = 0.001f, .decay = 6.0f, .sustain = 1.0f, .release = 0.15f, .width = 0.3f, .level = 1.1f },
+    { .name = "brass_stab", .center = 67, .lo = 53, .hi = 80, .osc1 = Osc::supersaw, .unison = 3, .detune = 10.0f, .filter = Filter::lp12, .cutoff = 900.0f, .fEnv = 2.6f, .fDecay = 0.15f, .fSus = 0.2f, .velCut = 0.8f, .attack = 0.008f, .decay = 0.3f, .sustain = 0.2f, .release = 0.1f, .width = 0.5f, .level = 0.8f },
+    { .name = "house_pluck", .center = 72, .lo = 58, .hi = 86, .osc1 = Osc::supersaw, .unison = 5, .detune = 15.0f, .filter = Filter::lp24, .cutoff = 700.0f, .res = 0.2f, .fEnv = 4.0f, .fDecay = 0.12f, .fSus = 0.05f, .attack = 0.002f, .decay = 0.35f, .sustain = 0.05f, .release = 0.15f, .width = 0.8f, .level = 0.9f },
+    { .name = "piano_lofi", .center = 70, .lo = 55, .hi = 88, .osc1 = Osc::piano, .filter = Filter::lp12, .cutoff = 1500.0f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.001f, .decay = 1.0f, .sustain = 1.0f, .release = 0.3f, .vibrato = 7.0f, .vibRate = 0.9f, .vibDelay = 0.0f, .width = 0.3f, .level = 1.15f },
+    { .name = "chip_arp", .center = 76, .lo = 62, .hi = 92, .osc1 = Osc::square, .attack = 0.001f, .decay = 0.25f, .sustain = 0.5f, .release = 0.03f, .pitchEnv = 12.0f, .pitchDecay = 0.015f, .width = 0.0f, .level = 0.45f },
+    // ---- audition: more chord sounds
+    { .name = "deep_stab", .center = 60, .lo = 48, .hi = 74, .osc1 = Osc::supersaw, .osc2 = Osc::square, .detune2 = -6.0f, .level2 = 0.35f, .unison = 2, .detune = 10.0f, .filter = Filter::lp24, .cutoff = 650.0f, .res = 0.3f, .fEnv = 2.2f, .fDecay = 0.2f, .fSus = 0.12f, .attack = 0.002f, .decay = 0.5f, .sustain = 0.12f, .release = 0.22f, .width = 0.6f, .level = 0.9f },
+    { .name = "wurli", .center = 60, .lo = 46, .hi = 76, .osc1 = Osc::fm, .r1 = 1.0f, .i1 = 0.9f, .r2 = 3.0f, .i2 = 0.6f, .iDecay = 0.4f, .iSus = 0.2f, .attack = 0.002f, .decay = 2.2f, .sustain = 0.0f, .release = 0.25f, .drive = 0.25f, .tremolo = 0.25f, .tremRate = 5.5f, .width = 0.3f, .level = 1.0f },
+    { .name = "clav", .center = 60, .lo = 48, .hi = 76, .osc1 = Osc::pluck, .ksBright = 1.0f, .ksDecay = 0.6f, .filter = Filter::bp, .cutoff = 1400.0f, .res = 0.3f, .keyTrack = 0.8f, .velCut = 0.6f, .attack = 0.001f, .decay = 0.6f, .sustain = 0.4f, .release = 0.05f, .width = 0.2f, .level = 1.6f },
+    { .name = "church_organ", .center = 60, .lo = 46, .hi = 76, .osc1 = Osc::additive, .partials = churchStops, .partialCount = 7, .attack = 0.08f, .decay = 1.0f, .sustain = 1.0f, .release = 0.4f, .width = 0.5f, .level = 0.5f },
+    { .name = "shimmer_pad", .center = 64, .lo = 50, .hi = 80, .osc1 = Osc::fm, .osc2 = Osc::sine, .semi2 = 12.0f, .detune2 = 9.0f, .level2 = 0.5f, .r1 = 3.0f, .i1 = 0.6f, .iDecay = 2.0f, .iSus = 0.4f, .attack = 0.6f, .decay = 1.0f, .sustain = 0.9f, .release = 1.4f, .tremolo = 0.15f, .tremRate = 0.3f, .width = 1.0f, .level = 0.75f },
+    { .name = "wide_pad", .center = 60, .lo = 46, .hi = 76, .osc1 = Osc::supersaw, .unison = 7, .detune = 30.0f, .filter = Filter::lp12, .cutoff = 2800.0f, .velCut = 0.0f, .attack = 0.25f, .decay = 1.0f, .sustain = 0.9f, .release = 0.7f, .width = 1.0f, .level = 0.55f },
+    { .name = "fb_chords", .center = 62, .lo = 48, .hi = 78, .osc1 = Osc::supersaw, .unison = 7, .detune = 22.0f, .filter = Filter::lp12, .cutoff = 3500.0f, .attack = 0.004f, .decay = 0.8f, .sustain = 0.8f, .release = 0.2f, .tremolo = 0.7f, .tremRate = 3.3f, .width = 1.0f, .level = 0.65f },
+    { .name = "house_pluck_chords", .center = 62, .lo = 48, .hi = 76, .osc1 = Osc::supersaw, .unison = 5, .detune = 15.0f, .filter = Filter::lp24, .cutoff = 600.0f, .res = 0.2f, .fEnv = 3.6f, .fDecay = 0.12f, .fSus = 0.05f, .attack = 0.002f, .decay = 0.35f, .sustain = 0.05f, .release = 0.15f, .width = 0.8f, .level = 0.9f },
+    { .name = "piano_lofi_chords", .center = 58, .lo = 45, .hi = 74, .osc1 = Osc::piano, .filter = Filter::lp12, .cutoff = 1300.0f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.001f, .decay = 1.0f, .sustain = 1.0f, .release = 0.35f, .vibrato = 7.0f, .vibRate = 0.9f, .vibDelay = 0.0f, .width = 0.4f, .level = 1.15f },
+    { .name = "clean_guitar", .center = 57, .lo = 45, .hi = 72, .osc1 = Osc::pluck, .ksBright = 0.4f, .ksDecay = 2.5f, .filter = Filter::lp12, .cutoff = 3000.0f, .keyTrack = 0.4f, .velCut = 0.3f, .attack = 0.001f, .decay = 6.0f, .sustain = 1.0f, .release = 0.2f, .width = 0.5f, .level = 1.1f },
+    { .name = "nylon", .center = 57, .lo = 45, .hi = 72, .osc1 = Osc::pluck, .ksBright = 0.25f, .ksDecay = 2.0f, .filter = Filter::lp12, .cutoff = 2000.0f, .keyTrack = 0.4f, .velCut = 0.3f, .attack = 0.002f, .decay = 6.0f, .sustain = 1.0f, .release = 0.25f, .width = 0.4f, .level = 1.2f },
+    { .name = "choir_ooh", .center = 60, .lo = 48, .hi = 74, .osc1 = Osc::supersaw, .unison = 5, .detune = 10.0f, .filter = Filter::bp, .cutoff = 550.0f, .res = 0.5f, .keyTrack = 0.3f, .velCut = 0.0f, .attack = 0.3f, .decay = 1.0f, .sustain = 0.9f, .release = 0.6f, .vibrato = 6.0f, .vibRate = 4.5f, .vibDelay = 0.4f, .width = 0.9f, .level = 1.4f },
+    { .name = "juno_pad", .center = 60, .lo = 46, .hi = 76, .osc1 = Osc::saw, .osc2 = Osc::square, .detune2 = 7.0f, .level2 = 0.5f, .unison = 2, .detune = 12.0f, .filter = Filter::lp12, .cutoff = 1300.0f, .res = 0.15f, .fEnv = 0.8f, .fDecay = 0.6f, .fSus = 0.3f, .velCut = 0.0f, .attack = 0.15f, .decay = 1.0f, .sustain = 0.85f, .release = 0.6f, .width = 0.9f, .level = 0.7f },
+    { .name = "m1_organ", .center = 62, .lo = 48, .hi = 76, .osc1 = Osc::additive, .noise = 0.06f, .noiseDecay = 0.004f, .noiseTone = 4000.0f, .partials = m1Organ, .partialCount = 6, .attack = 0.002f, .decay = 0.6f, .sustain = 0.2f, .release = 0.1f, .width = 0.3f, .level = 0.7f },
+    { .name = "pizzicato", .center = 60, .lo = 46, .hi = 76, .osc1 = Osc::pluck, .ksBright = 0.35f, .ksDecay = 0.5f, .filter = Filter::lp12, .cutoff = 2500.0f, .velCut = 0.3f, .attack = 0.001f, .decay = 0.5f, .sustain = 0.0f, .release = 0.1f, .width = 0.6f, .level = 1.3f },
+    { .name = "harp", .center = 62, .lo = 48, .hi = 80, .osc1 = Osc::pluck, .ksBright = 0.45f, .ksDecay = 3.5f, .filter = Filter::lp12, .cutoff = 3200.0f, .keyTrack = 0.5f, .attack = 0.001f, .decay = 6.0f, .sustain = 1.0f, .release = 0.6f, .width = 0.6f, .level = 1.1f },
+    { .name = "dark_choir", .center = 55, .lo = 43, .hi = 70, .osc1 = Osc::supersaw, .unison = 5, .detune = 12.0f, .filter = Filter::bp, .cutoff = 420.0f, .res = 0.5f, .keyTrack = 0.3f, .velCut = 0.0f, .attack = 0.5f, .decay = 1.0f, .sustain = 0.9f, .release = 0.9f, .vibrato = 5.0f, .vibRate = 4.0f, .vibDelay = 0.5f, .width = 0.9f, .level = 1.5f },
+    { .name = "brass_pad", .center = 60, .lo = 46, .hi = 74, .osc1 = Osc::supersaw, .unison = 3, .detune = 9.0f, .filter = Filter::lp12, .cutoff = 800.0f, .fEnv = 1.8f, .fDecay = 0.4f, .fSus = 0.5f, .velCut = 0.6f, .attack = 0.06f, .decay = 0.8f, .sustain = 0.9f, .release = 0.3f, .vibrato = 4.0f, .vibDelay = 0.5f, .width = 0.6f, .level = 0.7f },
+    { .name = "rave_stab", .center = 62, .lo = 48, .hi = 76, .osc1 = Osc::supersaw, .osc2 = Osc::saw, .semi2 = -12.0f, .level2 = 0.5f, .unison = 7, .detune = 40.0f, .filter = Filter::lp12, .cutoff = 3000.0f, .fEnv = 1.2f, .fDecay = 0.15f, .attack = 0.002f, .decay = 0.4f, .sustain = 0.15f, .release = 0.15f, .pitchEnv = -2.0f, .pitchDecay = 0.08f, .width = 1.0f, .level = 0.6f },
+    // ---- audition: more bass sounds
+    { .name = "rolling", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .sub = 0.8f, .filter = Filter::lp24, .cutoff = 200.0f, .res = 0.25f, .fEnv = 2.2f, .fDecay = 0.09f, .keyTrack = 0.6f, .velCut = 0.5f, .attack = 0.002f, .decay = 0.25f, .sustain = 0.2f, .release = 0.05f, .drive = 0.2f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "bass808_glide", .center = 33, .lo = 24, .hi = 45, .osc1 = Osc::sine, .osc2 = Osc::tri, .semi2 = 12.0f, .level2 = 0.1f, .attack = 0.001f, .decay = 2.6f, .sustain = 0.0f, .release = 0.08f, .pitchEnv = 8.0f, .pitchDecay = 0.03f, .drive = 0.5f, .glideMs = 160.0f, .mono = true, .width = 0.0f, .level = 0.95f },
+    { .name = "bass808_short", .center = 33, .lo = 24, .hi = 45, .osc1 = Osc::sine, .osc2 = Osc::sine, .semi2 = 12.0f, .level2 = 0.1f, .attack = 0.001f, .decay = 0.5f, .sustain = 0.0f, .release = 0.05f, .pitchEnv = 12.0f, .pitchDecay = 0.02f, .drive = 0.4f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "reese_dirty", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::supersaw, .unison = 3, .detune = 28.0f, .sub = 0.6f, .filter = Filter::lp24, .cutoff = 450.0f, .res = 0.35f, .fEnv = 0.6f, .fDecay = 0.3f, .fSus = 0.5f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.004f, .decay = 1.0f, .sustain = 1.0f, .release = 0.06f, .drive = 0.8f, .glideMs = 40.0f, .mono = true, .width = 0.0f, .level = 0.7f },
+    { .name = "reese_soft", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::supersaw, .unison = 3, .detune = 12.0f, .sub = 0.8f, .filter = Filter::lp24, .cutoff = 170.0f, .res = 0.1f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.008f, .decay = 1.0f, .sustain = 1.0f, .release = 0.08f, .drive = 0.1f, .glideMs = 50.0f, .mono = true, .width = 0.0f, .level = 0.9f },
+    { .name = "moog_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .osc2 = Osc::square, .semi2 = -12.0f, .level2 = 0.5f, .filter = Filter::lp24, .cutoff = 300.0f, .res = 0.45f, .fEnv = 2.0f, .fDecay = 0.18f, .fSus = 0.25f, .keyTrack = 0.5f, .attack = 0.002f, .decay = 0.5f, .sustain = 0.7f, .release = 0.06f, .drive = 0.35f, .mono = true, .width = 0.0f, .level = 0.9f },
+    { .name = "acid_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .filter = Filter::lp24, .cutoff = 200.0f, .res = 0.82f, .fEnv = 3.8f, .fDecay = 0.16f, .fSus = 0.05f, .keyTrack = 0.4f, .velCut = 1.2f, .attack = 0.002f, .decay = 0.5f, .sustain = 0.85f, .release = 0.05f, .drive = 0.5f, .glideMs = 55.0f, .mono = true, .width = 0.0f, .level = 0.8f },
+    { .name = "fm_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::fm, .r1 = 1.0f, .i1 = 2.6f, .r2 = 2.0f, .i2 = 0.8f, .iDecay = 0.15f, .iSus = 0.2f, .attack = 0.001f, .decay = 0.6f, .sustain = 0.5f, .release = 0.06f, .mono = true, .width = 0.0f, .level = 0.9f },
+    { .name = "wobble", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .osc2 = Osc::square, .detune2 = 8.0f, .level2 = 0.6f, .sub = 0.6f, .filter = Filter::lp24, .cutoff = 500.0f, .res = 0.4f, .keyTrack = 0.4f, .velCut = 0.0f, .attack = 0.004f, .decay = 1.0f, .sustain = 1.0f, .release = 0.06f, .drive = 0.6f, .mono = true, .tremolo = 0.75f, .tremRate = 3.3f, .width = 0.0f, .level = 0.75f },
+    { .name = "tech_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::square, .sub = 0.5f, .filter = Filter::lp24, .cutoff = 300.0f, .res = 0.3f, .fEnv = 2.0f, .fDecay = 0.06f, .keyTrack = 0.5f, .attack = 0.001f, .decay = 0.18f, .sustain = 0.1f, .release = 0.03f, .drive = 0.3f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "garage_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::sine, .osc2 = Osc::saw, .level2 = 0.15f, .filter = Filter::lp12, .cutoff = 500.0f, .keyTrack = 0.6f, .velCut = 0.0f, .attack = 0.002f, .decay = 0.6f, .sustain = 0.4f, .release = 0.06f, .pitchEnv = 5.0f, .pitchDecay = 0.05f, .drive = 0.4f, .glideMs = 30.0f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "finger_bass", .center = 38, .lo = 28, .hi = 50, .osc1 = Osc::pluck, .sub = 0.4f, .ksBright = 0.3f, .ksDecay = 2.5f, .filter = Filter::lp12, .cutoff = 800.0f, .keyTrack = 0.5f, .velCut = 0.4f, .attack = 0.002f, .decay = 6.0f, .sustain = 1.0f, .release = 0.06f, .mono = true, .width = 0.0f, .level = 1.2f },
+    { .name = "slap_bass", .center = 38, .lo = 28, .hi = 50, .osc1 = Osc::pluck, .sub = 0.3f, .ksBright = 0.9f, .ksDecay = 1.2f, .filter = Filter::lp12, .cutoff = 2200.0f, .keyTrack = 0.5f, .velCut = 0.8f, .attack = 0.001f, .decay = 6.0f, .sustain = 1.0f, .release = 0.05f, .drive = 0.2f, .mono = true, .width = 0.0f, .level = 1.1f },
+    { .name = "upright_bass", .center = 38, .lo = 28, .hi = 50, .osc1 = Osc::pluck, .noise = 0.05f, .noiseDecay = 0.01f, .noiseTone = 1200.0f, .ksBright = 0.2f, .ksDecay = 1.8f, .filter = Filter::lp12, .cutoff = 700.0f, .keyTrack = 0.5f, .velCut = 0.3f, .attack = 0.004f, .decay = 6.0f, .sustain = 1.0f, .release = 0.1f, .mono = true, .width = 0.0f, .level = 1.3f },
+    { .name = "synth80_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .osc2 = Osc::saw, .detune2 = 10.0f, .level2 = 0.7f, .filter = Filter::lp24, .cutoff = 400.0f, .res = 0.3f, .fEnv = 2.5f, .fDecay = 0.1f, .fSus = 0.1f, .keyTrack = 0.5f, .attack = 0.001f, .decay = 0.3f, .sustain = 0.3f, .release = 0.05f, .mono = true, .width = 0.0f, .level = 0.8f },
+    { .name = "square_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::square, .filter = Filter::lp12, .cutoff = 900.0f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.002f, .decay = 0.6f, .sustain = 0.8f, .release = 0.05f, .mono = true, .width = 0.0f, .level = 0.7f },
+    { .name = "saw_sub_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .sub = 0.9f, .filter = Filter::lp24, .cutoff = 600.0f, .res = 0.15f, .keyTrack = 0.5f, .velCut = 0.3f, .attack = 0.003f, .decay = 0.8f, .sustain = 0.8f, .release = 0.06f, .drive = 0.2f, .mono = true, .width = 0.0f, .level = 0.8f },
+    { .name = "funk_tum", .center = 33, .lo = 24, .hi = 45, .osc1 = Osc::sine, .attack = 0.001f, .decay = 0.35f, .sustain = 0.0f, .release = 0.04f, .pitchEnv = 15.0f, .pitchDecay = 0.025f, .drive = 0.55f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "hoover_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::supersaw, .osc2 = Osc::square, .semi2 = -12.0f, .level2 = 0.5f, .unison = 7, .detune = 40.0f, .filter = Filter::lp12, .cutoff = 1200.0f, .velCut = 0.0f, .attack = 0.01f, .decay = 1.0f, .sustain = 1.0f, .release = 0.1f, .pitchEnv = -3.0f, .pitchDecay = 0.1f, .drive = 0.3f, .glideMs = 80.0f, .mono = true, .width = 0.6f, .level = 0.5f },
+    { .name = "fb_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::supersaw, .unison = 3, .detune = 15.0f, .sub = 0.9f, .filter = Filter::lp24, .cutoff = 500.0f, .keyTrack = 0.5f, .velCut = 0.0f, .attack = 0.004f, .decay = 1.0f, .sustain = 1.0f, .release = 0.08f, .drive = 0.3f, .mono = true, .tremolo = 0.6f, .tremRate = 3.3f, .width = 0.0f, .level = 0.8f },
+    { .name = "lofi_sub", .center = 36, .lo = 26, .hi = 48, .osc1 = Osc::sine, .osc2 = Osc::tri, .semi2 = 12.0f, .level2 = 0.2f, .filter = Filter::lp12, .cutoff = 400.0f, .velCut = 0.0f, .attack = 0.005f, .decay = 0.9f, .sustain = 0.6f, .release = 0.08f, .drive = 0.6f, .mono = true, .width = 0.0f, .level = 0.9f },
+    { .name = "trance_bass", .center = 36, .lo = 28, .hi = 48, .osc1 = Osc::saw, .sub = 0.5f, .filter = Filter::lp24, .cutoff = 350.0f, .res = 0.25f, .fEnv = 2.5f, .fDecay = 0.07f, .keyTrack = 0.5f, .attack = 0.001f, .decay = 0.15f, .sustain = 0.05f, .release = 0.04f, .drive = 0.25f, .mono = true, .width = 0.0f, .level = 1.0f },
+    { .name = "donk", .center = 40, .lo = 30, .hi = 52, .osc1 = Osc::fm, .r1 = 1.5f, .i1 = 3.0f, .iDecay = 0.08f, .iSus = 0.0f, .attack = 0.001f, .decay = 0.25f, .sustain = 0.0f, .release = 0.04f, .pitchEnv = 7.0f, .pitchDecay = 0.015f, .mono = true, .width = 0.0f, .level = 1.0f },
 };
 constexpr int patchCount = (int) (sizeof(patches) / sizeof(patches[0]));
 
@@ -129,33 +200,42 @@ const P& patch(const char* name) {
 
 // Names and descriptions are UTF-8 (shown in Portuguese).
 const Sets::Kit kits[Sets::kitCount] {
-    { "PIANO",       "Piano ac\xc3\xbastico de verdade (gravado) na melodia e nos acordes, sub quente",        "piano",       "piano_chords",  "sub_warm" },
-    { "RHODES",      "Rhodes na melodia e nos acordes, com tremolo, sub quente",                                   "rhodes_lead", "rhodes",        "sub_warm" },
-    { "PIANO EL\xc3\x89TRICO", "Piano el\xc3\xa9trico FM (estilo anos 80) na melodia e nos acordes, sub redondo", "fm_ep_lead", "fm_ep",     "sub_round" },
-    { "VELUDO",      "Flauta suave na melodia, Rhodes nos acordes, sub quente",                                   "flute_soft",  "rhodes",        "sub_warm" },
-    { "NINAR",       "Caixinha de m\xc3\xbasica na melodia, pluck de corda nos acordes, sub quente",             "music_box",   "soft_pluck",    "sub_warm" },
-    { "PIXEL",       "Bleep de videogame na melodia, stabs de serra nos acordes, 808",                            "bleep",       "saw_stab",      "bass808" },
-    { "CLUBE",       "Marimba na melodia, \xc3\xb3rg\xc3\xa3o de house nos acordes, baixo pluck",               "marimba",     "organ",         "pluck_bass" },
-    { "NEON",        "Lead de supersaw na melodia, acordes de trance, sub redondo",                                "saw_lead",    "trance_chords", "sub_round" },
-    { "NOTURNO",     "Lead escuro na melodia, pad de vidro segurando os acordes, baixo reese",                    "dark_lead",   "glass_pad",     "reese", true },
-    { "\xc3\x89PICO", "Metais de synth na melodia, cordas de synth segurando os acordes, sub quente",           "synth_brass", "string_pad",    "sub_warm", true },
+    { "PIANO", "Piano ac\xc3\xba" "stico de verdade na melodia e nos acordes, sub redondo", "piano", "piano_chords", "sub_round", false, false, -1 },
+    { "RHODES", "Rhodes na melodia e nos acordes, baixo deep", "rhodes_lead", "rhodes", "deep_bass", false, false, -1 },
+    { "LO-FI", "Piano lo-fi abafado na melodia e nos acordes, sub lo-fi", "piano_lofi", "piano_lofi_chords", "lofi_sub", false, false, -1 },
+    { "EL\xc3\x89" "TRICO", "Rhodes na melodia, Wurlitzer nos acordes, baixo Moog", "rhodes_lead", "wurli", "moog_bass", false, false, -1 },
+    { "GROOVE", "Flauta na melodia, Wurlitzer nos acordes, baixo Moog", "flute_soft", "wurli", "moog_bass", false, false, -1 },
+    { "DARK TRAP", "Piano na melodia, pad escuro nos acordes, 808 com glide", "piano", "dark_pad", "bass808_glide", false, false, 4 },
+    { "DRILL", "Sine lead com glide na melodia, cordas nos acordes, reese sujo", "sine_lead", "string_pad", "reese_dirty", false, false, -1 },
+    { "HOUSE", "Sine lead na melodia, pad Juno nos acordes, baixo saw + sub", "sine_lead", "juno_pad", "saw_sub_bass", false, false, 4 },
+    { "DEEP", "Piano lo-fi na melodia, stab de deep house nos acordes, sub redondo", "piano_lofi", "deep_stab", "sub_round", false, false, 1 },
+    { "CRISTAL", "Piano na melodia, pad quente nos acordes, sub lo-fi", "piano", "warm_pad", "lofi_sub", false, false, 4 },
+    { "ACID", "Square lead na melodia, \xc3\xb3" "rg\xc3\xa3" "o M1 nos acordes, baixo acid 303", "square_lead", "m1_organ", "acid_bass", false, false, -1 },
+    { "8-BIT", "Arpejo 8-bit na melodia, saw stab nos acordes, baixo future bass", "chip_arp", "saw_stab", "fb_bass", false, false, -1 },
+    { "VELUDO", "Flauta suave na melodia, pad quente nos acordes, sub redondo", "flute_soft", "warm_pad", "sub_round", false, false, -1 },
+    { "SYNTHWAVE", "Assobio na melodia, pad Juno nos acordes, baixo synth anos 80", "whistle", "juno_pad", "synth80_bass", false, false, -1 },
 };
 
 // per set and layer (melody, bass, chords): dB, measured so every set exports at a similar loudness with
 // chords a few dB under the melody and the bass level with it
 const float kitGainsDb[Sets::kitCount][3] {
-    { 3.1f, 4.7f, 0.5f },
-    { 5.0f, 4.2f, 1.5f },
-    { 6.4f, 2.2f, 0.7f },
-    { 2.1f, 4.3f, 2.0f },
-    { 8.1f, 5.1f, 11.8f },
-    { 11.3f, 5.4f, 14.1f },
-    { 9.9f, 11.4f, 4.1f },
-    { 5.0f, 5.6f, 5.4f },
-    { 6.6f, 12.4f, -2.5f },
-    { 2.9f, 4.3f, 1.4f },
+    { 3.1f, 2.0f, -1.6f },
+    { 4.7f, 8.6f, 0.9f },
+    { 2.8f, 4.8f, -1.1f },
+    { 4.7f, 6.6f, 1.6f },
+    { 2.1f, 6.6f, 1.6f },
+    { 3.1f, 6.0f, -2.0f },
+    { 0.4f, 4.6f, 0.5f },
+    { 0.4f, 6.6f, -1.4f },
+    { 2.8f, 2.0f, 10.4f },
+    { 3.1f, 4.8f, 0.6f },
+    { 4.0f, 2.0f, 9.6f },
+    { 8.4f, 9.4f, 16.7f },
+    { 2.1f, 2.0f, 0.6f },
+    { 1.4f, 11.9f, -1.4f },
 };
 
+const P* auditionPatch[3] {}; float auditionDb[3] {};   // test-only: forces a patch on a layer
 struct KitPatches { const P* melody; const P* chords; const P* bass; };
 const KitPatches& kitPatches(int k) {
     static const auto all = [] {
@@ -193,6 +273,8 @@ float basic(Osc o, double ph, double dt) {
 }
 }
 
+void Sets::audition(int layer, const char* name, float db) { if (layer >= 0 && layer < 3) auditionDb[layer] = db; if (layer >= 0 && layer < 3) auditionPatch[layer] = name ? &patch(name) : nullptr; }
+
 const Sets::Kit& Sets::kit(int k) { return kits[k < 0 || k >= kitCount ? 0 : k]; }
 
 void Sets::prepare(double rate) {
@@ -214,7 +296,7 @@ int Sets::activeVoices() const {
 void Sets::noteOn(int pitch, int velocity, int lengthSamples, int layer) {
     layer = juce::jlimit(0, 2, layer);
     const auto& K = kitPatches(kitIndex);
-    const P& p = *(layer == 1 ? K.bass : layer == 2 ? K.chords : K.melody);
+    const P& p = auditionPatch[layer] ? *auditionPatch[layer] : *(layer == 1 ? K.bass : layer == 2 ? K.chords : K.melody);
     // the whole line moves by octaves toward the patch's centre, then single notes fold into its range
     const int c = centers[(size_t) layer];
     if (c > 0) pitch += 12 * (int) std::lround((p.center - c) / 12.0);
@@ -251,7 +333,7 @@ void Sets::start(Voice& v, const Patch& p, int pitch, float vel, int length, int
     v.freq = v.freqTarget = hz(pitch); v.glideK = 1.0;
     const float layerLevel = layer == 1 ? bassLevel : layer == 2 ? chordLevel : melodyLevel;
     v.gain = p.level * (0.3f + 0.7f * std::pow(vel, 1.3f)) * layerLevel * 0.3f
-           * juce::Decibels::decibelsToGain(kitGainsDb[kitIndex][layer]);
+           * (auditionPatch[layer] ? juce::Decibels::decibelsToGain(auditionDb[layer]) : juce::Decibels::decibelsToGain(kitGainsDb[kitIndex][layer]));
     v.env = 0.0f; v.kill = 0.0f;
     v.atkK = 1.0f / juce::jmax(1.0f, p.attack * (float) sr);
     v.decK = coef(p.decay, sr);
